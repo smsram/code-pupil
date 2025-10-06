@@ -1,0 +1,31 @@
+{
+  "name": "codesphere-api",
+  "version": "1.0.1",
+  "description": "CodeSphere API server with WebSocket code runner supporting Python, JavaScript, C, C++, Java, and C#",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+  	"start": "node index.js",
+  	"dev": "nodemon index.js"
+},
+  "dependencies": {
+  "cors": "^2.8.5",
+  "dotenv": "^16.3.1",
+  "express": "^4.19.2",
+  "ws": "^8.15.0",
+  "tar": "^6.1.11"
+},
+"devDependencies": {
+  "nodemon": "^3.0.1"
+},
+  "engines": {
+    "node": ">=18"
+  },
+  "config": {
+    "dockerEnvironment": true,
+    "autoInstallRuntimes": false,
+    "jdkFolder": "jdk-21"
+  },
+  "author": "Your Name",
+  "license": "MIT"
+}
