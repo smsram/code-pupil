@@ -1,0 +1,18 @@
+{
+  "name": "proxy-gateway",
+  "version": "1.0.0",
+  "description": "Proxy and WebSocket gateway for frontend clients and backend tunnel server",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "http-proxy-middleware": "^3.0.0",
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.7.5"
+  }
+}
