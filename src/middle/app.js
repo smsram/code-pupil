@@ -1,28 +1,18 @@
-import express from "express";
-import { createProxyMiddleware } from "http-proxy-middleware";
-import { createServer } from "http";
-import { Server as SocketServer } from "socket.io";
-import { io as ClientSocket } from "socket.io-client";
+const express = require("express");
+const http = require("http");
+const cors = require("cors");
+const { createProxyMiddleware } = require("http-proxy-middleware");
+const { Server } = require("socket.io");
+const { io: Client } = require("socket.io-client");
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 // === CONFIG ===
-// This is your backend HTTP server (zeus.hidencloud.com)
-const BACKEND_URL = process.env.BACKEND_URL || "http://zeus.hidencloud.com:24650";
+const BACKEND_URL = "http://zeus.hidencloud.com:24650"; // Your actual tunnel target
 
-// === CORS ===
-// Allow Vercel frontend or any frontend
-app.use(
-  (req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*"); // replace "*" with your domain in production
-    res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type,Authorization");
-    next();
-  }
-);
-
-// === PROXY FOR HTTP REQUESTS ===
+// === EXPRESS PROXY FOR HTTP REQUESTS ===
 app.use(
   "/api",
   createProxyMiddleware({
@@ -36,47 +26,51 @@ app.use(
   })
 );
 
-// === SOCKET.IO SERVER ===
-const server = createServer(app);
-const io = new SocketServer(server, {
+// === CREATE SERVER + SOCKET.IO ===
+const server = http.createServer(app);
+const io = new Server(server, {
   cors: {
-    origin: "*", // replace "*" with your Vercel frontend domain
-    methods: ["GET", "POST"],
+    origin: "*",
   },
 });
 
-// Connect to backend Socket.IO server
 console.log("Connecting to backend socket:", BACKEND_URL);
-const backendSocket = ClientSocket(BACKEND_URL, {
-  transports: ["websocket"],
+const backendSocket = Client(BACKEND_URL, {
   reconnection: true,
+  transports: ["websocket"],
 });
 
-backendSocket.on("connect", () => console.log("✅ Connected to backend socket"));
-backendSocket.on("disconnect", () => console.log("⚠️ Disconnected from backend socket"));
-backendSocket.on("connect_error", (err) => console.error("❌ Backend socket error:", err.message));
+backendSocket.on("connect", () => {
+  console.log("✅ Connected to backend socket!");
+});
 
-// Forward messages between frontend clients and backend
+backendSocket.on("disconnect", () => {
+  console.log("⚠️ Disconnected from backend socket");
+});
+
+// === FRONTEND SOCKET HANDLING ===
 io.on("connection", (socket) => {
   console.log("🟢 Client connected:", socket.id);
 
-  // Client → Backend
+  // Forward messages from client → backend
   socket.on("client-event", (data) => {
     backendSocket.emit("client-event", data);
   });
 
-  // Backend → Client
+  // Forward messages from backend → client
   backendSocket.on("server-event", (data) => {
     socket.emit("server-event", data);
   });
 
-  socket.on("disconnect", () => console.log("🔴 Client disconnected:", socket.id));
+  socket.on("disconnect", () => {
+    console.log("🔴 Client disconnected:", socket.id);
+  });
 });
 
 // === START SERVER ===
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
   console.log(`🌐 Proxy Gateway running on port ${PORT}`);
-  console.log(`🌐 HTTP requests: https://<your-proxy-url>/api/...`);
-  console.log(`🌐 Socket.IO endpoint: wss://<your-proxy-url>`);
+  console.log(`🌐 HTTP requests: http://localhost:${PORT}/api/...`);
+  console.log(`🌐 Socket.IO endpoint: ws://localhost:${PORT}`);
 });
