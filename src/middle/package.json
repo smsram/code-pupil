@@ -1,17 +1,27 @@
 {
-  "name": "codesphere-proxy",
+  "name": "codesphere-api",
   "version": "1.0.0",
-  "description": "HTTPS/WSS proxy for hidden cloud CodeSphere server",
+  "description": "CodeSphere API server with WebSocket code runner supporting multiple languages",
   "main": "app.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "build": "echo 'No build step needed'"
   },
   "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "csv-writer": "^1.6.0",
     "dotenv": "^16.4.5",
-    "http-proxy": "^1.18.1",
+    "exceljs": "^4.4.0",
     "express": "^4.21.2",
-    "cors": "^2.8.5"
+    "pdfkit": "^0.17.2",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
+    "ws": "^8.18.0",
+    "rimraf": "^5.0.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"
