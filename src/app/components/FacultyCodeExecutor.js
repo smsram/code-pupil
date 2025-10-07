@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 
-const API_SOCKET_BASE = "ws://zeus.hidencloud.com:24650";
+const API_SOCKET_BASE = process.env.NEXT_PUBLIC_API_BASE_SOCKET_URL;
 
 const FacultyCodeExecutor = ({ 
   code, 
