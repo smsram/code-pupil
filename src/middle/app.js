@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 // === CONFIG ===
-const BACKEND_URL = "https://zeus.hidencloud.com:24650"; // HTTPS backend
+const BACKEND_URL = "http://zeus.hidencloud.com:24650"; // <-- Use HTTP here
 
 // === HTTP PROXY ===
 app.use(
