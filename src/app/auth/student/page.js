@@ -233,7 +233,7 @@ export default function StudentAuth() {
                     <div className="main-container">
                         <div className="form-wrapper">
                             <div className="header-section">
-                                <h1 className="main-title">CodeTest Pro</h1>
+                                <h1 className="main-title">Code Pupil</h1>
                                 <p className="subtitle">Student Portal - Programming Excellence</p>
                             </div>
 
@@ -587,7 +587,7 @@ export default function StudentAuth() {
                             </div>
 
                             <div className="footer">
-                                <p>&copy; 2025 CodeTest Pro. Student Portal for Programming Excellence.</p>
+                                <p>&copy; 2025 Code Pupil. Student Portal for Programming Excellence.</p>
                             </div>
                         </div>
                     </div>
