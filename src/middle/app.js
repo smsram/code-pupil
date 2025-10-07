@@ -1,71 +1,30 @@
-// pages/api/proxy.js (CommonJS version)
-const express = require("express");
-const cors = require("cors");
-const { createProxyMiddleware } = require("http-proxy-middleware");
-const { Server: IOServer } = require("socket.io");
+const http = require("http");
+
+// Create the server with Express app
+const server = http.createServer(app);
+
+// Socket.IO
+const io = new (require("socket.io").Server)(server, {
+  cors: { origin: "*" },
+});
+
+// Your backend Socket.IO connection
 const { io: Client } = require("socket.io-client");
+const BACKEND_URL = "https://zeus.hidencloud.com:24650";
+const backendSocket = Client(BACKEND_URL, { transports: ["websocket"], reconnection: true });
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+backendSocket.on("connect", () => console.log("✅ Connected to backend socket!"));
+backendSocket.on("disconnect", () => console.log("⚠️ Disconnected from backend socket"));
 
-// === CONFIG ===
-const BACKEND_URL = "https://zeus.hidencloud.com:24650"; // Use HTTPS
+io.on("connection", (socket) => {
+  console.log("🟢 Client connected:", socket.id);
+  socket.on("client-event", (data) => backendSocket.emit("client-event", data));
+  backendSocket.on("server-event", (data) => socket.emit("server-event", data));
+  socket.on("disconnect", () => console.log("🔴 Client disconnected:", socket.id));
+});
 
-// === EXPRESS PROXY FOR HTTP REQUESTS ===
-app.use(
-  "/api",
-  createProxyMiddleware({
-    target: BACKEND_URL,
-    changeOrigin: true,
-    pathRewrite: { "^/api": "" },
-    onError(err, req, res) {
-      console.error("Proxy error:", err.message);
-      res.status(500).json({ error: "Backend unreachable" });
-    },
-  })
-);
-
-// === SOCKET.IO HANDLING ===
-let io;
-module.exports = (req, res) => {
-  if (!io) {
-    // Create Socket.IO server once
-    io = new IOServer({
-      cors: { origin: "*" },
-      path: "/api/socket.io",
-    });
-
-    console.log("Connecting to backend socket:", BACKEND_URL);
-    const backendSocket = Client(BACKEND_URL, {
-      reconnection: true,
-      transports: ["websocket"],
-    });
-
-    backendSocket.on("connect", () => {
-      console.log("✅ Connected to backend socket!");
-    });
-
-    backendSocket.on("disconnect", () => {
-      console.log("⚠️ Disconnected from backend socket");
-    });
-
-    io.on("connection", (socket) => {
-      console.log("🟢 Client connected:", socket.id);
-
-      socket.on("client-event", (data) => {
-        backendSocket.emit("client-event", data);
-      });
-
-      backendSocket.on("server-event", (data) => {
-        socket.emit("server-event", data);
-      });
-
-      socket.on("disconnect", () => {
-        console.log("🔴 Client disconnected:", socket.id);
-      });
-    });
-  }
-
-  app(req, res);
-};
+// Listen on PORT
+const PORT = process.env.PORT || 4000;
+server.listen(PORT, () => {
+  console.log(`🌐 Proxy Gateway running on port ${PORT}`);
+});
