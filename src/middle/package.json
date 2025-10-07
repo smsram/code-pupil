@@ -1,11 +1,12 @@
 {
   "name": "middle-server",
   "version": "1.0.0",
-  "description": "Proxy + WebSocket middle server",
+  "description": "Proxy + WebSocket middle server for Vercel/Render",
   "main": "app.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node app.js",
-    "build": "echo 'Build step not required'"
+    "build": "echo 'No build required for Node.js server'"
   },
   "dependencies": {
     "express": "^4.19.2",
@@ -14,5 +15,9 @@
     "socket.io-client": "^4.7.2",
     "axios": "^1.7.4",
     "cors": "^2.8.5"
-  }
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
 }
