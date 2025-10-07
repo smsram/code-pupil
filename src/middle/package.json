@@ -1,11 +1,12 @@
 {
   "name": "middle-server",
   "version": "1.0.0",
-  "description": "Proxy + WebSocket middle server for Vercel/Render",
+  "description": "Proxy + WebSocket middle server for Render",
   "main": "app.js",
   "type": "commonjs",
   "scripts": {
     "start": "node app.js",
+    "start:prod": "PORT=10000 node app.js",
     "build": "echo 'No build required for Node.js server'"
   },
   "dependencies": {
