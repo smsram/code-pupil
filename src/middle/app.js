@@ -1,16 +1,16 @@
-// pages/api/proxy.js (or api/proxy.js for Vercel serverless)
-import express from "express";
-import cors from "cors";
-import { createProxyMiddleware } from "http-proxy-middleware";
-import { Server as IOServer } from "socket.io";
-import { io as Client } from "socket.io-client";
+// pages/api/proxy.js (CommonJS version)
+const express = require("express");
+const cors = require("cors");
+const { createProxyMiddleware } = require("http-proxy-middleware");
+const { Server: IOServer } = require("socket.io");
+const { io: Client } = require("socket.io-client");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 // === CONFIG ===
-const BACKEND_URL = "https://zeus.hidencloud.com:24650"; // Use HTTPS if backend supports it
+const BACKEND_URL = "https://zeus.hidencloud.com:24650"; // Use HTTPS
 
 // === EXPRESS PROXY FOR HTTP REQUESTS ===
 app.use(
@@ -28,9 +28,9 @@ app.use(
 
 // === SOCKET.IO HANDLING ===
 let io;
-export default function handler(req, res) {
+module.exports = (req, res) => {
   if (!io) {
-    // Vercel doesn't allow persistent servers, but we can attach Socket.IO once
+    // Create Socket.IO server once
     io = new IOServer({
       cors: { origin: "*" },
       path: "/api/socket.io",
@@ -68,4 +68,4 @@ export default function handler(req, res) {
   }
 
   app(req, res);
-}
+};
