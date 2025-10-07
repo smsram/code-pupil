@@ -201,7 +201,7 @@ export default function FacultyAuth() {
                     <div className="main-container">
                         <div className="form-wrapper">
                             <div className="header-section">
-                                <h1 className="main-title">CodeTest Pro</h1>
+                                <h1 className="main-title">Code Pupil</h1>
                                 <p className="subtitle">Faculty Portal - Educational Excellence</p>
                             </div>
 
@@ -490,7 +490,7 @@ export default function FacultyAuth() {
                             </div>
 
                             <div className="footer">
-                                <p>&copy; 2025 CodeTest Pro. Faculty Portal for Educational Excellence.</p>
+                                <p>&copy; 2025 Code Pupil. Faculty Portal for Educational Excellence.</p>
                             </div>
                         </div>
                     </div>
