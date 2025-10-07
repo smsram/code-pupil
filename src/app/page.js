@@ -82,109 +82,6 @@ export default function Page() {
         </div>
       </section>
 
-      {/* Features */}
-      <section className="lp-section" id="features">
-        <h2 className="lp-h2">Why CodePupil?</h2>
-        <p className="lp-subtle">
-          Everything required to plan, proctor, evaluate, and analyze coding assessments.
-        </p>
-
-        <div className="lp-grid">
-          <Card
-            icon={
-              <svg viewBox="0 0 24 24" className="lp-fi">
-                <path d="M4 8h16M4 16h16M8 4v4m0 8v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            }
-            title="Live test controls"
-            desc="Publish, lock, and broadcast announcements in real time during the test."
-          />
-          <Card
-            icon={
-              <svg viewBox="0 0 24 24" className="lp-fi">
-                <path d="M5 12l4 4L19 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            }
-            title="Auto‑grading"
-            desc="Fast evaluation with custom scoring, outputs, and crash detection."
-          />
-          <Card
-            icon={
-              <svg viewBox="0 0 24 24" className="lp-fi">
-                <path d="M12 6v12M6 12h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            }
-            title="Plagiarism checks"
-            desc="Similarity detection across students with flagging and analytics."
-          />
-          <Card
-            icon={
-              <svg viewBox="0 0 24 24" className="lp-fi">
-                <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.2" fill="none" />
-              </svg>
-            }
-            title="IST timestamps"
-            desc="Timestamps aligned with India Standard Time for consistency."
-          />
-          <Card
-            icon={
-              <svg viewBox="0 0 24 24" className="lp-fi">
-                <path d="M4 7h16M7 7v10a3 3 0 003 3h4a3 3 0 003-3V7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            }
-            title="Offline‑safe snapshots"
-            desc="Continuous code snapshots reduce data loss during unstable connectivity."
-          />
-          <Card
-            icon={
-              <svg viewBox="0 0 24 24" className="lp-fi">
-                <path d="M4 13h4v7H4zM10 9h4v11h-4zM16 5h4v15h-4z" stroke="currentColor" strokeWidth="1.2" fill="currentColor" />
-              </svg>
-            }
-            title="Rich analytics"
-            desc="Completion rate, duration, score distributions, and flagged outliers."
-          />
-        </div>
-      </section>
-
-      {/* Steps */}
-      <section className="lp-section">
-        <h2 className="lp-h2">How it works</h2>
-        <div className="lp-steps">
-          <Step n={1} title="Create & publish" desc="Prepare problems, configure duration, and publish for a batch." />
-          <Step n={2} title="Monitor live" desc="Track progress, push announcements, and resolve issues instantly." />
-          <Step n={3} title="Evaluate & analyze" desc="Get graded outputs, similarity flags, and performance dashboards." />
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="lp-cta">
-        <h3 className="lp-cta-title">Ready to take a test?</h3>
-        <p className="lp-cta-sub">Log in to the student portal to begin.</p>
-        <Link href="/auth/student/">
-          <button className="lp-btn jumbo">Login at /auth/student/</button>
-        </Link>
-      </section>
-
-      {/* Footer */}
-      <footer className="lp-footer">
-        <div className="lp-foot-wrap">
-          <div className="lp-foot-brand">
-            <div className="lp-logo small">CP</div>
-            <div>
-              <div className="lp-foot-title">CodePupil</div>
-              <div className="lp-foot-sub">Build, conduct, and measure coding skill.</div>
-            </div>
-          </div>
-          <div className="lp-foot-links">
-            <a href="#features">Features</a>
-            <a href="#top">Top</a>
-            <Link href="/auth/student/">Student Login</Link>
-          </div>
-        </div>
-      </footer>
-
       <style jsx global>{`
         :root {
           /* Primary */
@@ -426,6 +323,44 @@ export default function Page() {
           transition: all 0.2s ease;
         }
         .lp-foot-links a:hover { border-color: var(--student-border-focus); color: #e6fbff; }
+
+        /* Responsive tweaks */
+  @media (max-width: 1024px) {
+    .lp-wrap { padding: 12px 16px; }
+    .lp-hero { padding: 20px 16px 0; }
+    .lp-grid { gap: 12px; }
+    .lp-steps { gap: 10px; }
+  }
+
+  @media (max-width: 820px) {
+    .lp-hero-title { font-size: clamp(30px, 5.4vw, 46px); }
+    .lp-hero-sub { font-size: 15px; }
+    .lp-hero-cta { flex-wrap: wrap; row-gap: 10px; }
+    .lp-marquee { margin-top: 20px; }
+    .lp-pill { padding: 7px 10px; font-size: 12px; }
+    .lp-pill-dot { width: 5px; height: 5px; }
+  }
+
+  @media (max-width: 640px) {
+    .lp-wrap { gap: 10px; }
+    .lp-brand-text .lp-title { font-size: 14px; }
+    .lp-brand-text .lp-sub { font-size: 11px; }
+    .lp-actions .lp-btn { padding: 10px 12px; font-size: 13px; }
+    .lp-hero-title { font-size: clamp(26px, 7vw, 38px); }
+    .lp-hero-sub { font-size: 14px; max-width: 92%; }
+    .lp-btn { padding: 10px 12px; font-size: 14px; }
+    .lp-btn.jumbo { padding: 12px 14px; font-size: 15px; }
+    .lp-grid { grid-template-columns: 1fr; }
+    .lp-steps { grid-template-columns: 1fr; }
+    .lp-foot-wrap { flex-direction: column; align-items: flex-start; gap: 10px; }
+  }
+
+  @media (max-width: 420px) {
+    .lp-logo { width: 34px; height: 34px; }
+    .lp-actions .lp-btn.ghost { padding: 8px 10px; font-size: 12px; }
+    .lp-hero-cta { gap: 8px; }
+    .lp-pill { padding: 6px 8px; font-size: 11px; }
+  }
       `}</style>
     </main>
   );
