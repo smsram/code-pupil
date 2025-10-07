@@ -12,15 +12,17 @@ app.use(cors());
 app.use(express.json());
 
 // === CONFIG ===
-const BACKEND_URL = "http://zeus.hidencloud.com:24650"; // <-- Use HTTP here
+const BACKEND_URL = "http://zeus.hidencloud.com:24650"; // HTTP backend
+const FRONTEND_PREFIX = "/api"; // All client calls go through this
 
-// === HTTP PROXY ===
+// === PROXY SETUP ===
 app.use(
-  "/api",
+  FRONTEND_PREFIX,
   createProxyMiddleware({
     target: BACKEND_URL,
     changeOrigin: true,
-    pathRewrite: { "^/api": "" },
+    pathRewrite: { [`^${FRONTEND_PREFIX}`]: "" },
+    secure: false, // allows HTTP target
     onError(err, req, res) {
       console.error("Proxy error:", err.message);
       res.status(500).json({ error: "Backend unreachable" });
@@ -37,8 +39,8 @@ const io = new IOServer(server, { cors: { origin: "*" } });
 
 // === BACKEND SOCKET CONNECTION ===
 const backendSocket = Client(BACKEND_URL, {
-  reconnection: true,
   transports: ["websocket"],
+  reconnection: true,
 });
 
 backendSocket.on("connect", () => console.log("✅ Connected to backend socket!"));
@@ -48,8 +50,10 @@ backendSocket.on("disconnect", () => console.log("⚠️ Disconnected from backe
 io.on("connection", (socket) => {
   console.log("🟢 Client connected:", socket.id);
 
+  // forward client events to backend
   socket.on("client-event", (data) => backendSocket.emit("client-event", data));
 
+  // forward backend events to client
   backendSocket.on("server-event", (data) => socket.emit("server-event", data));
 
   socket.on("disconnect", () => console.log("🔴 Client disconnected:", socket.id));
@@ -57,6 +61,6 @@ io.on("connection", (socket) => {
 
 // === START SERVER ===
 server.listen(PORT, () => {
-  console.log(`🌐 Proxy Gateway running on port ${PORT}`);
-  console.log(`🌐 HTTP proxy: http://localhost:${PORT}/api/...`);
+  console.log(`🌐 Middle server running on port ${PORT}`);
+  console.log(`🌐 Proxy available at https://<your-domain>${FRONTEND_PREFIX}/...`);
 });
