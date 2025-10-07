@@ -1,29 +1,36 @@
-const https = require("https");
-const fs = require("fs");
+const http = require("http");
 const httpProxy = require("http-proxy");
 
-// Load TLS cert
-const options = {
-  key: fs.readFileSync("./privkey.pem"),
-  cert: fs.readFileSync("./fullchain.pem"),
-};
+// Proxy target
+const TARGET = "http://zeus.hidencloud.com:24650"; // your hidden cloud server
 
-// Proxy config
+// Create proxy server
 const proxy = httpProxy.createProxyServer({
-  target: "http://zeus.hidencloud.com:24650", // your hidden cloud server
-  ws: true,
+  target: TARGET,
+  ws: true, // enable WebSocket proxying
+  changeOrigin: true,
 });
 
-// HTTPS server
-const server = https.createServer(options, (req, res) => {
-  proxy.web(req, res);
+// Create HTTP server
+const server = http.createServer((req, res) => {
+  proxy.web(req, res, (err) => {
+    console.error("HTTP proxy error:", err);
+    res.writeHead(502, { "Content-Type": "text/plain" });
+    res.end("Bad gateway");
+  });
 });
 
-// WebSocket upgrade
+// Handle WebSocket upgrades
 server.on("upgrade", (req, socket, head) => {
-  proxy.ws(req, socket, head);
+  proxy.ws(req, socket, head, (err) => {
+    console.error("WebSocket proxy error:", err);
+    socket.destroy();
+  });
 });
 
-server.listen(443, () => {
-  console.log("✅ Proxy running on https://yourdomain.com");
+// Start server
+const PORT = process.env.PORT || 4000; // Render provides PORT
+server.listen(PORT, () => {
+  console.log(`✅ Proxy running on http://localhost:${PORT}`);
+  console.log(`✅ Proxying to: ${TARGET}`);
 });
