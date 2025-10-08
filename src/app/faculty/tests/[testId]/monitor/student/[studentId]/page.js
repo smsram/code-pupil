@@ -116,7 +116,7 @@ const StudentDetail = () => {
   const testId = params.testId;
   const studentId = params.studentId;
   const { success, error, warning } = useNotification();
-  const confirm = useConfirm();
+  const { confirm } = useConfirm();
 
   const [studentData, setStudentData] = useState(null);
   const [test, setTest] = useState(null);
