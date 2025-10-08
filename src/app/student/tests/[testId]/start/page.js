@@ -802,7 +802,9 @@ export default function TestStart() {
                 />
               </svg>
               {unreadCount > 0 && (
-                <span className="student-notification-badge">{unreadCount}</span>
+                <span className="student-notification-badge">
+                  {unreadCount}
+                </span>
               )}
             </button>
 
@@ -968,7 +970,7 @@ export default function TestStart() {
                       d="M3 6.75A2.25 2.25 0 0 1 5.25 4.5h13.5A2.25 2.25 0 0 1 21 6.75v10.5A2.25 2.25 0 0 1 18.75 19.5H5.25A2.25 2.25 0 0 1 3 17.25V6.75Z"
                     />
                   </svg>
-                                    Console
+                  Console
                 </div>
                 <button
                   onClick={clearConsole}
@@ -1095,6 +1097,7 @@ export default function TestStart() {
         </div>
       </div>
 
+      {/* Manual Fullscreen Prompt (shown if auto-enter fails) */}
       {test?.fullscreen_mode && showFullscreenPrompt && (
         <div
           style={{
@@ -1160,14 +1163,12 @@ export default function TestStart() {
                 boxShadow: "0 4px 12px rgba(59, 130, 246, 0.4)",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow =
-                  "0 6px 20px rgba(59, 130, 246, 0.6)";
+                e.target.style.transform = "translateY(-2px)";
+                e.target.style.boxShadow = "0 6px 20px rgba(59, 130, 246, 0.6)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow =
-                  "0 4px 12px rgba(59, 130, 246, 0.4)";
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 4px 12px rgba(59, 130, 246, 0.4)";
               }}
             >
               🖥️ Enter Fullscreen Mode
@@ -1176,6 +1177,7 @@ export default function TestStart() {
         </div>
       )}
 
+      {/* Fullscreen Exit Warning with 20s Countdown */}
       {test?.fullscreen_mode && showFullscreenWarning && !isSubmitted && (
         <div
           style={{
@@ -1273,14 +1275,12 @@ export default function TestStart() {
                 textTransform: "uppercase",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "scale(1.1)";
-                e.currentTarget.style.boxShadow =
-                  "0 6px 20px rgba(220, 38, 38, 0.8)";
+                e.target.style.transform = "scale(1.1)";
+                e.target.style.boxShadow = "0 6px 20px rgba(220, 38, 38, 0.8)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "scale(1)";
-                e.currentTarget.style.boxShadow =
-                  "0 4px 12px rgba(220, 38, 38, 0.6)";
+                e.target.style.transform = "scale(1)";
+                e.target.style.boxShadow = "0 4px 12px rgba(220, 38, 38, 0.6)";
               }}
             >
               ⛶ RETURN TO FULLSCREEN NOW
