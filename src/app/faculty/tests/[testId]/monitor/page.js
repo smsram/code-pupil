@@ -40,7 +40,7 @@ const TestMonitoring = () => {
   const params = useParams();
   const testId = params.testId;
   const { success, error, warning } = useNotification();
-  const confirm = useConfirm();
+  const { confirm } = useConfirm();
 
   const [test, setTest] = useState(null);
   const [students, setStudents] = useState([]);
@@ -48,7 +48,9 @@ const TestMonitoring = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
-  const [loadingMessage, setLoadingMessage] = useState("Loading monitoring data...");
+  const [loadingMessage, setLoadingMessage] = useState(
+    "Loading monitoring data..."
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // NEW: track first load to avoid depending on `test` inside the callback
@@ -77,7 +79,9 @@ const TestMonitoring = () => {
       if (testResponse.ok && testData.success) {
         setTest(testData.data);
 
-        const studentsResponse = await fetch(`${API_BASE_URL}/test/${testId}/students`);
+        const studentsResponse = await fetch(
+          `${API_BASE_URL}/test/${testId}/students`
+        );
         const studentsData = await studentsResponse.json();
 
         if (studentsResponse.ok && studentsData.success) {
