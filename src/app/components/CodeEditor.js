@@ -3,7 +3,7 @@
 
 import { forwardRef, useEffect, useRef, useState } from "react";
 
-const API_SOCKET_BASE = "ws://zeus.hidencloud.com:24650";
+const API_SOCKET_BASE = process.env.NEXT_PUBLIC_API_BASE_SOCKET_URL;
 
 const CM_BASE = "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.7";
 const CM_ASSETS = {
