@@ -67,7 +67,7 @@ export default function TestMessages() {
   const router = useRouter();
   const { testId } = params;
   const { success, error, warning } = useNotification();
-  const confirm = useConfirm();
+  const { confirm } = useConfirm();
 
   const [isLoading, setIsLoading] = useState(true);
   const [test, setTest] = useState(null);
