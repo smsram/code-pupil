@@ -1,14 +1,14 @@
-'use client'
+"use client";
 
-import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useNotification } from '@/app/components/Notification'
-import LoadingOverlay from '@/app/components/LoadingOverlay'
-import { useConfirm } from '@/app/components/ConfirmDialog'
-import AutoRefreshButton from '@/app/components/AutoRefreshButton'
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
+import { useNotification } from "@/app/components/Notification";
+import LoadingOverlay from "@/app/components/LoadingOverlay";
+import AutoRefreshButton from "@/app/components/AutoRefreshButton";
+import { useConfirm } from "@/app/components/ConfirmDialog";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // Format datetime
 const formatDateTime = (datetimeStr) => {
@@ -98,63 +98,66 @@ const getTestStatus = (startTime, duration) => {
 };
 
 const AllTests = () => {
-  const router = useRouter()
-  const { success, error, warning } = useNotification()
-  const confirm = useConfirm()
+  const router = useRouter();
+  const { success, error, warning } = useNotification();
+  const { confirm } = useConfirm();
 
-  const [tests, setTests] = useState([])
-  const [filteredTests, setFilteredTests] = useState([])
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [isLoading, setIsLoading] = useState(true)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [loadingMessage, setLoadingMessage] = useState('Loading tests...')
-  const [hasLiveTests, setHasLiveTests] = useState(false)
+  const [tests, setTests] = useState([]);
+  const [filteredTests, setFilteredTests] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Loading tests...");
+  const [hasLiveTests, setHasLiveTests] = useState(false);
 
   // Memoized fetch to satisfy exhaustive-deps
   const fetchTests = useCallback(async () => {
-    const facultyId = typeof window !== 'undefined' ? localStorage.getItem('faculty_id') : null
+    const facultyId =
+      typeof window !== "undefined" ? localStorage.getItem("faculty_id") : null;
     if (!facultyId) {
-      error('Please login to view tests', 'Authentication Required')
-      router.push('/auth/faculty')
-      return
+      error("Please login to view tests", "Authentication Required");
+      router.push("/auth/faculty");
+      return;
     }
 
     if (!tests.length) {
-      setIsLoading(true)
-      setLoadingMessage('Loading tests...')
+      setIsLoading(true);
+      setLoadingMessage("Loading tests...");
     }
-    setIsRefreshing(true)
+    setIsRefreshing(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/test/faculty/${facultyId}`)
-      const data = await response.json()
+      const response = await fetch(`${API_BASE_URL}/test/faculty/${facultyId}`);
+      const data = await response.json();
 
       if (response.ok && data.success) {
-        setTests(data.data)
-        setFilteredTests(data.data)
+        setTests(data.data);
+        setFilteredTests(data.data);
 
         // Check live tests
-        const liveTests = data.data.some((test) => getTestStatus(test.start_time, test.duration) === 'live')
-        setHasLiveTests(liveTests)
+        const liveTests = data.data.some(
+          (test) => getTestStatus(test.start_time, test.duration) === "live"
+        );
+        setHasLiveTests(liveTests);
       } else {
-        error(data.message || 'Failed to fetch tests', 'Error')
+        error(data.message || "Failed to fetch tests", "Error");
       }
     } catch (err) {
-      console.error('Fetch tests error:', err)
+      console.error("Fetch tests error:", err);
       if (!tests.length) {
-        error('Unable to connect to server', 'Network Error')
+        error("Unable to connect to server", "Network Error");
       }
     } finally {
-      setIsLoading(false)
-      setIsRefreshing(false)
+      setIsLoading(false);
+      setIsRefreshing(false);
     }
-  }, [router, error, tests.length])
+  }, [router, error, tests.length]);
 
   useEffect(() => {
-    fetchTests()
-  }, [fetchTests])
-  
+    fetchTests();
+  }, [fetchTests]);
+
   useEffect(() => {
     let filtered = tests;
 
@@ -177,7 +180,7 @@ const AllTests = () => {
 
     setFilteredTests(filtered);
   }, [tests, searchTerm, statusFilter]);
-  
+
   const handleDelete = async (testId, testTitle) => {
     const confirmed = await confirm({
       title: "Delete Test",
