@@ -25,13 +25,13 @@ export default function StudentDashboard() {
   });
   const [tests, setTests] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("Loading dashboard...");
 
-  // Track first load so the fetch callback doesn't depend on `student`
   const isFirstLoadRef = useRef(true);
 
   useEffect(() => {
@@ -39,6 +39,30 @@ export default function StudentDashboard() {
       setCurrentTime(new Date());
     }, 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  // Fetch notifications from database
+  const fetchNotifications = useCallback(async (studentId) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/notifications/student/${studentId}?limit=20&t=${Date.now()}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache",
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setNotifications(data.data.notifications || []);
+        setUnreadCount(data.data.unreadCount || 0);
+      }
+    } catch (err) {
+      console.error("Fetch notifications error:", err);
+    }
   }, []);
 
   const fetchStudentData = useCallback(async () => {
@@ -78,7 +102,7 @@ export default function StudentDashboard() {
         setStats(statsData.data);
       }
 
-      // Fetch student tests (with cache buster)
+      // Fetch student tests
       const testsResponse = await fetch(
         `${API_BASE_URL}/test/student/${studentId}/tests?t=${Date.now()}`,
         {
@@ -93,8 +117,10 @@ export default function StudentDashboard() {
       const testsData = await testsResponse.json();
       if (testsResponse.ok && testsData.success) {
         setTests(testsData.data);
-        createNotifications(testsData.data);
       }
+
+      // Fetch notifications from database
+      await fetchNotifications(studentId);
     } catch (err) {
       console.error("Fetch student data error:", err);
       if (isFirstLoadRef.current) {
@@ -105,82 +131,38 @@ export default function StudentDashboard() {
       setIsRefreshing(false);
       isFirstLoadRef.current = false;
     }
-  }, [error, router, API_BASE_URL]);
+  }, [error, router, fetchNotifications]);
 
   useEffect(() => {
     fetchStudentData();
   }, [fetchStudentData]);
 
-  const createNotifications = (testsData) => {
-    const newNotifications = [];
-    let notifId = 1;
-
-    const activeTests = testsData.filter(
-      (t) => t.studentStatus === "in-progress" && t.testStatus === "live"
-    );
-    if (activeTests.length > 0) {
-      const test = activeTests[0];
-      const startTime = new Date(test.start_time);
-      const endTime = new Date(startTime.getTime() + test.duration * 60000);
-      const remaining = Math.max(0, Math.floor((endTime - currentTime) / 60000));
-      if (remaining > 0) {
-        newNotifications.push({
-          id: notifId++,
-          type: "system",
-          message: `You have ${remaining} minutes remaining in ${test.title}`,
-          time: "now",
-          read: false,
-        });
-      }
-    }
-
-    const liveTests = testsData.filter(
-      (t) => t.testStatus === "live" && t.studentStatus === "not-started"
-    );
-    liveTests.forEach((test) => {
-      newNotifications.push({
-        id: notifId++,
-        type: "faculty",
-        message: `${test.title} is now LIVE! Join now to begin.`,
-        time: "just now",
-        read: false,
-      });
-    });
-
-    const upcomingTests = testsData.filter((t) => {
-      if (t.testStatus !== "upcoming") return false;
-      const timeUntil = new Date(t.start_time).getTime() - currentTime.getTime();
-      return timeUntil > 0 && timeUntil < 3600000;
-    });
-
-    upcomingTests.forEach((test) => {
-      const minutesUntil = Math.floor(
-        (new Date(test.start_time).getTime() - currentTime.getTime()) / 60000
-      );
-      if (minutesUntil > 0) {
-        newNotifications.push({
-          id: notifId++,
-          type: "system",
-          message: `${test.title} starts in ${minutesUntil} minutes`,
-          time: `${minutesUntil} min`,
-          read: false,
-        });
-      }
-    });
-
-    setNotifications(newNotifications);
-  };
-
-  const unreadNotifications = notifications.filter((n) => !n.read).length;
-
   const handleNotificationToggle = () => {
     setShowNotifications(!showNotifications);
   };
 
-  const markNotificationRead = (id) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
+  const markNotificationRead = async (notificationId) => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/notifications/${notificationId}/read`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (response.ok) {
+        // Update local state
+        setNotifications((prev) =>
+          prev.map((n) =>
+            n.notification_id === notificationId ? { ...n, read: 1 } : n
+          )
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    } catch (err) {
+      console.error("Mark notification read error:", err);
+    }
   };
 
   const handleLogout = () => {
@@ -190,12 +172,12 @@ export default function StudentDashboard() {
     }
   };
 
-  // Get active test (currently taking) - use backend status
+  // Get active test
   const activeTest = tests.find(
     (test) => test.studentStatus === "in-progress" && test.testStatus === "live"
   );
 
-  // Sort tests: active first, then live, then upcoming, then completed - use backend status
+  // Sort tests
   const sortedTests = [...tests].sort((a, b) => {
     const statusOrder = {
       "in-progress": 0,
@@ -205,11 +187,9 @@ export default function StudentDashboard() {
       missed: 4,
     };
 
-    // Prioritize student in-progress tests
     if (a.studentStatus === "in-progress" && a.testStatus === "live") return -1;
     if (b.studentStatus === "in-progress" && b.testStatus === "live") return 1;
 
-    // Use backend testStatus for sorting
     const aOrder = statusOrder[a.testStatus] || 5;
     const bOrder = statusOrder[b.testStatus] || 5;
 
@@ -217,11 +197,9 @@ export default function StudentDashboard() {
       return aOrder - bOrder;
     }
 
-    // Within same status, sort by start time
     return new Date(a.start_time) - new Date(b.start_time);
   });
 
-  // Calculate remaining time for active test
   const getActiveTestRemaining = (test) => {
     if (!test) return 0;
     const startTime = new Date(test.start_time);
@@ -229,10 +207,94 @@ export default function StudentDashboard() {
     return Math.max(0, Math.floor((endTime - currentTime) / (1000 * 60)));
   };
 
-  // Determine if there are any live or in-progress tests
   const hasLiveTests = tests.some(
     (t) => t.testStatus === "live" || t.studentStatus === "in-progress"
   );
+
+  // Format notification time
+  const formatNotificationTime = (createdAt) => {
+    const now = new Date();
+    const created = new Date(createdAt);
+    const diffMs = now - created;
+    const diffMins = Math.floor(diffMs / 60000);
+
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
+  };
+
+  // Get notification icon based on type
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case "alert":
+        return (
+          <svg
+            className="w-4 h-4 inline mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        );
+      case "success":
+        return (
+          <svg
+            className="w-4 h-4 inline mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        );
+      case "warning":
+        return (
+          <svg
+            className="w-4 h-4 inline mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        );
+      default: // 'info'
+        return (
+          <svg
+            className="w-4 h-4 inline mr-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        );
+    }
+  };
 
   if (isLoading || !student) {
     return (
@@ -285,7 +347,7 @@ export default function StudentDashboard() {
                 onRefresh={fetchStudentData}
                 isRefreshing={isRefreshing}
                 showOnlyWhenLive={hasLiveTests}
-                autoRefreshInterval={30000} // 30 seconds
+                autoRefreshInterval={30000}
               />
 
               {/* Notification Bell */}
@@ -308,9 +370,9 @@ export default function StudentDashboard() {
                       d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                     />
                   </svg>
-                  {unreadNotifications > 0 && (
+                  {unreadCount > 0 && (
                     <span className="student-notification-badge">
-                      {unreadNotifications}
+                      {unreadCount}
                     </span>
                   )}
                 </button>
@@ -335,21 +397,23 @@ export default function StudentDashboard() {
                         d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
                       />
                     </svg>
-                    Recent Notifications
+                    Notifications
                   </div>
                   {notifications.length === 0 ? (
                     <div
                       className="student-notification-item"
                       style={{ textAlign: "center", opacity: 0.6 }}
                     >
-                      No new notifications
+                      No notifications
                     </div>
                   ) : (
                     notifications.map((notification) => (
                       <div
-                        key={notification.id}
+                        key={notification.notification_id}
                         className="student-notification-item"
-                        onClick={() => markNotificationRead(notification.id)}
+                        onClick={() =>
+                          markNotificationRead(notification.notification_id)
+                        }
                         style={{
                           opacity: notification.read ? 0.6 : 1,
                           pointerEvents: "auto",
@@ -357,39 +421,23 @@ export default function StudentDashboard() {
                         }}
                       >
                         <div className="student-notification-content">
-                          {notification.type === "faculty" ? (
-                            <svg
-                              className="w-4 h-4 inline mr-2"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+                          {getNotificationIcon(notification.type)}
+                          <div>
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                marginBottom: "0.25rem",
+                              }}
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                              />
-                            </svg>
-                          ) : (
-                            <svg
-                              className="w-4 h-4 inline mr-2"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                          )}
-                          {notification.message}
+                              {notification.title}
+                            </div>
+                            <div style={{ fontSize: "0.875rem" }}>
+                              {notification.message}
+                            </div>
+                          </div>
                         </div>
                         <div className="student-notification-time">
-                          {notification.time}
+                          {formatNotificationTime(notification.created_at)}
                         </div>
                       </div>
                     ))
