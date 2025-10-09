@@ -237,8 +237,8 @@ const TestMonitoring = () => {
     }
   };
 
-  const handleViewStudent = (studentId) => {
-    router.push(`/faculty/tests/${testId}/monitor/student/${studentId}`);
+  const handleViewStudent = (studentPin) => {
+    router.push(`/faculty/tests/${testId}/monitor/student/${studentPin}`);
   };
 
   if (isLoading || !test) {
@@ -672,9 +672,7 @@ const TestMonitoring = () => {
                             <div className="action-buttons">
                               <button
                                 className="btn-sm primary"
-                                onClick={() =>
-                                  handleViewStudent(student.student_id)
-                                }
+                                onClick={() => handleViewStudent(student.pin)}
                                 style={{
                                   pointerEvents: "auto",
                                   cursor: "pointer",
