@@ -114,7 +114,7 @@ const StudentDetail = () => {
   const router = useRouter();
   const params = useParams();
   const testId = params.testId;
-  const studentId = params.studentId;
+  const studentPin = params.studentId;
   const { success, error, warning } = useNotification();
   const { confirm } = useConfirm();
 
@@ -146,9 +146,9 @@ const StudentDetail = () => {
     setIsRefreshing(true);
 
     try {
-      // Always fetch the student record
+      // Fetch student by PIN instead of ID
       const studentRes = await fetch(
-        `${API_BASE_URL}/test/${testId}/student/${studentId}`
+        `${API_BASE_URL}/test/${testId}/student/by-pin/${studentPin}` // Updated endpoint
       );
       const studentJson = await studentRes.json();
       if (!studentRes.ok || !studentJson.success) {
@@ -156,7 +156,7 @@ const StudentDetail = () => {
       }
       setStudentData(studentJson.data);
 
-      // Always fetch the test record to avoid branching on state
+      // Fetch test details
       const testRes = await fetch(`${API_BASE_URL}/test/${testId}`);
       const testJson = await testRes.json();
       if (testRes.ok && testJson.success) {
@@ -173,15 +173,20 @@ const StudentDetail = () => {
       setIsLoading(false);
       initialLoadRef.current = false;
     }
-  }, [testId, studentId, router, error]);
+  }, [testId, studentPin, router, error]);
 
   useEffect(() => {
-    if (studentId && testId) {
+    if (studentPin && testId) {
       fetchStudentDetails();
     }
-  }, [studentId, testId, fetchStudentDetails]);
+  }, [studentPin, testId, fetchStudentDetails]);
+
+  // Get student_id from fetched data for lock/unlock/restart operations
+  const studentId = studentData?.student?.student_id;
 
   const handleLockTest = async () => {
+    if (!studentId) return; // Wait for student_id to load
+
     if (studentData?.student && studentData.student.status === "in-progress") {
       const confirmed = await confirm({
         title: "Lock Student Test",
@@ -198,7 +203,7 @@ const StudentDetail = () => {
 
       try {
         const response = await fetch(
-          `${API_BASE_URL}/test/${testId}/student/${studentId}/lock`,
+          `${API_BASE_URL}/test/${testId}/student/${studentId}/lock`, // Still use ID for operations
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -228,6 +233,8 @@ const StudentDetail = () => {
   };
 
   const handleUnlockTest = async () => {
+    if (!studentId) return;
+
     if (studentData?.student && studentData.student.status === "locked") {
       const confirmed = await confirm({
         title: "Unlock Student Test",
@@ -274,6 +281,8 @@ const StudentDetail = () => {
   };
 
   const handleRestartTest = async () => {
+    if (!studentId) return;
+
     const confirmed = await confirm({
       title: "Restart Student Test",
       message: `Restart test for ${studentData.student.first_name} ${studentData.student.last_name}?\n\nThis will clear all progress, code, and submissions. This action cannot be undone.`,
@@ -318,6 +327,8 @@ const StudentDetail = () => {
   };
 
   const handleUpdateScore = async () => {
+    if (!studentId) return;
+
     if (newScore < 0 || newScore > 100) {
       warning("Score must be between 0 and 100", "Invalid Score");
       return;
