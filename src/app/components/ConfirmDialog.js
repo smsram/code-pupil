@@ -19,7 +19,7 @@ export const ConfirmDialogProvider = ({ children }) => {
     message = 'Are you sure you want to proceed?',
     confirmText = 'Proceed',
     cancelText = 'Cancel',
-    type = 'info', // 'info', 'warning', 'danger', 'success'
+    type = 'info', // 'info', 'warning', 'danger', 'success', 'locked'
     onConfirm,
     onCancel,
   }) => {
@@ -65,6 +65,20 @@ const ConfirmDialog = ({ dialog }) => {
 
   const getTypeStyles = () => {
     switch (type) {
+      case 'locked':
+        return {
+          icon: (
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" 
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ),
+          iconColor: '#f87171',
+          iconBg: 'rgba(248, 113, 113, 0.15)',
+          confirmButton: styles.lockedButton,
+        };
       case 'danger':
         return {
           icon: (
@@ -270,6 +284,9 @@ const styles = {
   },
   dangerButton: {
     background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+  },
+  lockedButton: {
+    background: 'linear-gradient(135deg, #f87171, #ef4444)',
   },
 };
 
