@@ -32,9 +32,7 @@ const Header = ({ onToggleSidebar, onToggleMobileMenu }) => {
     try {
       const response = await fetch(
         `${API_BASE_URL}/auth/faculty/verify/${facultyId}`,
-        {
-          headers: { "Content-Type": "application/json" },
-        }
+        { headers: { "Content-Type": "application/json" } }
       );
 
       const data = await response.json();
@@ -54,17 +52,17 @@ const Header = ({ onToggleSidebar, onToggleMobileMenu }) => {
       const response = await fetch(
         `${API_BASE_URL}/notifications/faculty/${facultyId}?limit=20&t=${Date.now()}`,
         {
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
-            "Cache-Control": "no-cache"
+            "Cache-Control": "no-cache",
           },
         }
       );
 
       const data = await response.json();
       if (response.ok && data.success) {
-        setNotifications(data.data.notifications);
-        setUnreadCount(data.data.unreadCount);
+        setNotifications(data.data.notifications || []);
+        setUnreadCount(data.data.unreadCount || 0);
       }
     } catch (err) {
       console.error("Fetch notifications error:", err);
@@ -167,23 +165,15 @@ const Header = ({ onToggleSidebar, onToggleMobileMenu }) => {
   const { title, subtitle } = getPageInfo();
 
   const handleCreateTest = () => {
-    router.push("/faculty/tests/create");
+    router.push("/faculty/create");
   };
 
   const handleBroadcast = () => {
     info("📢 Broadcast feature coming soon", "Info");
   };
 
-  const handleNotificationClick = () => {
+  const handleNotificationToggle = () => {
     setShowNotifications(!showNotifications);
-  };
-
-  const handleNotificationItemClick = (notification) => {
-    markAsRead(notification.notification_id);
-    if (notification.link) {
-      router.push(notification.link);
-      setShowNotifications(false);
-    }
   };
 
   const handleLogout = () => {
@@ -201,7 +191,7 @@ const Header = ({ onToggleSidebar, onToggleMobileMenu }) => {
 
   const formatTime = (timestamp) => {
     if (!timestamp) return "Just now";
-    
+
     const now = new Date();
     const time = new Date(timestamp);
     const diff = now - time;
@@ -215,34 +205,6 @@ const Header = ({ onToggleSidebar, onToggleMobileMenu }) => {
     if (hours > 0) return `${hours}h ago`;
     if (minutes > 0) return `${minutes}m ago`;
     return "Just now";
-  };
-
-  const getNotificationIcon = (type) => {
-    switch (type) {
-      case "alert":
-        return "🚨";
-      case "success":
-        return "✅";
-      case "warning":
-        return "⚠️";
-      case "info":
-      default:
-        return "ℹ️";
-    }
-  };
-
-  const getNotificationColor = (type) => {
-    switch (type) {
-      case "alert":
-        return "#ef4444";
-      case "success":
-        return "#22c55e";
-      case "warning":
-        return "#f59e0b";
-      case "info":
-      default:
-        return "#3b82f6";
-    }
   };
 
   return (
@@ -318,11 +280,11 @@ const Header = ({ onToggleSidebar, onToggleMobileMenu }) => {
               <span className="btn-text">Broadcast</span>
             </button>
 
-            {/* Notification Bell with Dropdown */}
-            <div style={{ position: "relative" }}>
+            {/* Notification Bell */}
+            <div style={{ position: "relative", zIndex: 1000001 }}>
               <button
                 className="notification-btn"
-                onClick={handleNotificationClick}
+                onClick={handleNotificationToggle}
                 style={{ pointerEvents: "auto", cursor: "pointer" }}
               >
                 <svg
@@ -342,191 +304,6 @@ const Header = ({ onToggleSidebar, onToggleMobileMenu }) => {
                   <span className="notification-badge">{unreadCount}</span>
                 )}
               </button>
-
-              {/* Notifications Dropdown */}
-              {showNotifications && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "calc(100% + 10px)",
-                    right: 0,
-                    width: "400px",
-                    maxHeight: "500px",
-                    background:
-                      "linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98))",
-                    backdropFilter: "blur(20px)",
-                    border: "1px solid rgba(71, 85, 105, 0.3)",
-                    borderRadius: "12px",
-                    boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)",
-                    zIndex: 1000,
-                    overflow: "hidden",
-                  }}
-                >
-                  {/* Notification Header */}
-                  <div
-                    style={{
-                      padding: "1rem",
-                      borderBottom: "1px solid rgba(71, 85, 105, 0.3)",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <h3
-                      style={{
-                        color: "#06b6d4",
-                        fontWeight: 600,
-                        fontSize: "1rem",
-                      }}
-                    >
-                      Notifications
-                    </h3>
-                    {unreadCount > 0 && (
-                      <button
-                        onClick={markAllAsRead}
-                        style={{
-                          background: "rgba(6, 182, 212, 0.1)",
-                          border: "1px solid rgba(6, 182, 212, 0.3)",
-                          color: "#06b6d4",
-                          padding: "0.25rem 0.75rem",
-                          borderRadius: "6px",
-                          fontSize: "0.75rem",
-                          cursor: "pointer",
-                          pointerEvents: "auto",
-                        }}
-                      >
-                        Mark all read
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Notifications List */}
-                  <div
-                    style={{
-                      maxHeight: "400px",
-                      overflowY: "auto",
-                    }}
-                  >
-                    {notifications.length === 0 ? (
-                      <div
-                        style={{
-                          padding: "3rem",
-                          textAlign: "center",
-                          color: "#94a3b8",
-                        }}
-                      >
-                        <svg
-                          style={{
-                            width: "48px",
-                            height: "48px",
-                            margin: "0 auto 1rem",
-                            opacity: 0.5,
-                          }}
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                          />
-                        </svg>
-                        <p>No notifications</p>
-                      </div>
-                    ) : (
-                      notifications.map((notification) => (
-                        <div
-                          key={notification.notification_id}
-                          onClick={() => handleNotificationItemClick(notification)}
-                          style={{
-                            padding: "1rem",
-                            borderBottom: "1px solid rgba(71, 85, 105, 0.2)",
-                            cursor: notification.link ? "pointer" : "default",
-                            background: notification.read
-                              ? "transparent"
-                              : "rgba(6, 182, 212, 0.05)",
-                            opacity: notification.read ? 0.6 : 1,
-                            transition: "all 0.3s ease",
-                            pointerEvents: "auto",
-                          }}
-                          onMouseEnter={(e) => {
-                            if (notification.link) {
-                              e.currentTarget.style.background =
-                                "rgba(6, 182, 212, 0.1)";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = notification.read
-                              ? "transparent"
-                              : "rgba(6, 182, 212, 0.05)";
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "flex-start",
-                              gap: "0.75rem",
-                            }}
-                          >
-                            <div
-                              style={{
-                                fontSize: "1.25rem",
-                                marginTop: "0.25rem",
-                              }}
-                            >
-                              {getNotificationIcon(notification.type)}
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <div
-                                style={{
-                                  color: "#e2e8f0",
-                                  fontWeight: 500,
-                                  marginBottom: "0.25rem",
-                                  fontSize: "0.875rem",
-                                }}
-                              >
-                                {notification.title}
-                              </div>
-                              <div
-                                style={{
-                                  color: "#94a3b8",
-                                  fontSize: "0.8125rem",
-                                  marginBottom: "0.25rem",
-                                }}
-                              >
-                                {notification.message}
-                              </div>
-                              <div
-                                style={{
-                                  color: "#6b7280",
-                                  fontSize: "0.75rem",
-                                }}
-                              >
-                                {formatTime(notification.created_at)}
-                              </div>
-                            </div>
-                            {!notification.read && (
-                              <div
-                                style={{
-                                  width: "8px",
-                                  height: "8px",
-                                  borderRadius: "50%",
-                                  background: getNotificationColor(
-                                    notification.type
-                                  ),
-                                  marginTop: "0.5rem",
-                                }}
-                              />
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* User Profile */}
@@ -583,13 +360,294 @@ const Header = ({ onToggleSidebar, onToggleMobileMenu }) => {
         </div>
       </header>
 
-      {/* Click Outside to Close Notifications */}
+      {/* Notifications Dropdown - OUTSIDE HEADER */}
+      {showNotifications && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: "fixed",
+            top: "80px",
+            right: "20px",
+            width: "420px",
+            maxWidth: "calc(100vw - 40px)",
+            maxHeight: "600px",
+            background:
+              "linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98))",
+            backdropFilter: "blur(20px)",
+            border: "1px solid rgba(71, 85, 105, 0.3)",
+            borderRadius: "12px",
+            boxShadow: "0 20px 60px rgba(0, 0, 0, 0.5)",
+            zIndex: 1000002,
+            overflow: "hidden",
+            pointerEvents: "auto",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              padding: "1rem",
+              borderBottom: "1px solid rgba(71, 85, 105, 0.3)",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.75rem",
+              background: "rgba(15, 23, 42, 0.95)",
+              flexShrink: 0,
+            }}
+          >
+            <svg
+              style={{
+                width: "20px",
+                height: "20px",
+                stroke: "#06b6d4",
+                flexShrink: 0,
+              }}
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              />
+            </svg>
+            <span
+              style={{
+                color: "#06b6d4",
+                fontWeight: 600,
+                fontSize: "1rem",
+                flex: 1,
+              }}
+            >
+              Notifications
+            </span>
+            {unreadCount > 0 && (
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  await markAllAsRead();
+                }}
+                style={{
+                  background: "rgba(6, 182, 212, 0.1)",
+                  border: "1px solid rgba(6, 182, 212, 0.3)",
+                  color: "#06b6d4",
+                  padding: "0.35rem 0.85rem",
+                  borderRadius: "6px",
+                  fontSize: "0.75rem",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  transition: "all 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(6, 182, 212, 0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(6, 182, 212, 0.1)";
+                }}
+              >
+                Mark all read
+              </button>
+            )}
+          </div>
+
+          {/* Notifications List */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              overflowX: "hidden",
+              background: "rgba(15, 23, 42, 0.95)",
+              maxHeight: "500px",
+            }}
+          >
+            {notifications.length === 0 ? (
+              <div
+                style={{
+                  padding: "3rem 1rem",
+                  textAlign: "center",
+                  color: "#94a3b8",
+                }}
+              >
+                <svg
+                  style={{
+                    width: "48px",
+                    height: "48px",
+                    margin: "0 auto 1rem",
+                    opacity: 0.5,
+                    display: "block",
+                  }}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                  />
+                </svg>
+                <p style={{ margin: 0 }}>No notifications</p>
+              </div>
+            ) : (
+              notifications.map((notification) => (
+                <div
+                  key={notification.notification_id}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    await markAsRead(notification.notification_id);
+                    if (notification.link) {
+                      setShowNotifications(false);
+                      router.push(notification.link);
+                    }
+                  }}
+                  style={{
+                    padding: "1rem",
+                    borderBottom: "1px solid rgba(71, 85, 105, 0.2)",
+                    cursor: "pointer",
+                    opacity: notification.read ? 0.6 : 1,
+                    transition: "background 0.3s ease",
+                    background: "transparent",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(6, 182, 212, 0.1)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "0.75rem",
+                    }}
+                  >
+                    <div style={{ flexShrink: 0, marginTop: "0.125rem" }}>
+                      {notification.type === "alert" ? (
+                        <svg
+                          style={{ width: "18px", height: "18px", stroke: "#ef4444" }}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                          />
+                        </svg>
+                      ) : notification.type === "success" ? (
+                        <svg
+                          style={{ width: "18px", height: "18px", stroke: "#22c55e" }}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      ) : notification.type === "warning" ? (
+                        <svg
+                          style={{ width: "18px", height: "18px", stroke: "#f59e0b" }}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      ) : (
+                        <svg
+                          style={{ width: "18px", height: "18px", stroke: "#3b82f6" }}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          color: "#e2e8f0",
+                          fontWeight: 600,
+                          fontSize: "0.875rem",
+                          marginBottom: "0.375rem",
+                          wordWrap: "break-word",
+                        }}
+                      >
+                        {notification.title}
+                      </div>
+                      <div
+                        style={{
+                          color: "#94a3b8",
+                          fontSize: "0.8125rem",
+                          lineHeight: 1.5,
+                          wordWrap: "break-word",
+                          whiteSpace: "normal",
+                        }}
+                      >
+                        {notification.message}
+                      </div>
+                      <div
+                        style={{
+                          color: "#6b7280",
+                          fontSize: "0.75rem",
+                          marginTop: "0.5rem",
+                        }}
+                      >
+                        {formatTime(notification.created_at)}
+                      </div>
+                    </div>
+                    {!notification.read && (
+                      <div
+                        style={{
+                          width: "8px",
+                          height: "8px",
+                          borderRadius: "50%",
+                          flexShrink: 0,
+                          marginTop: "0.5rem",
+                          background:
+                            notification.type === "alert"
+                              ? "#ef4444"
+                              : notification.type === "success"
+                              ? "#22c55e"
+                              : notification.type === "warning"
+                              ? "#f59e0b"
+                              : "#3b82f6",
+                        }}
+                      />
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Backdrop */}
       {showNotifications && (
         <div
           style={{
             position: "fixed",
             inset: 0,
-            zIndex: 999,
+            zIndex: 1000000,
+            background: "transparent",
           }}
           onClick={() => setShowNotifications(false)}
         />
