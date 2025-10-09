@@ -32,6 +32,11 @@ export default function TestStart() {
   const [isSaving, setIsSaving] = useState(false);
   const messagePollingRef = useRef(null);
   const [shownScheduledMessages] = useState(new Set());
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockDialogShown, setLockDialogShown] = useState(false);
+  const isPollingRef = useRef(false);
+  const lastLockStateRef = useRef(null);
+  const [timeRemaining, setTimeRemaining] = useState(null);
 
   const [consoleOutput, setConsoleOutput] = useState([]);
   const [isRunning, setIsRunning] = useState(false);
@@ -233,49 +238,123 @@ export default function TestStart() {
     return () => clearInterval(interval);
   }, [scheduledMessages, test, isSubmitted, scheduledMessage]);
 
-  // Poll for live messages
+  // Polling useEffect
   useEffect(() => {
     if (!test || isSubmitted) return;
 
-    const pollLiveMessages = async () => {
+    let isMounted = true; // Track component mount state
+
+    const pollLiveStatus = async () => {
+      // Prevent concurrent requests
+      if (isPollingRef.current) {
+        return;
+      }
+
       const studentId = localStorage.getItem("student_id");
+      if (!studentId) return;
+
+      isPollingRef.current = true;
 
       try {
         const response = await fetch(
-          `${API_BASE_URL}/test/${testId}/student/${studentId}/messages`
+          `${API_BASE_URL}/test/${testId}/student/${studentId}/live-status`,
+          {
+            headers: { "Content-Type": "application/json" },
+            signal: AbortSignal.timeout(4000), // 4s timeout
+          }
         );
 
         const data = await response.json();
 
-        if (response.ok && data.success && data.messages.length > 0) {
-          data.messages.forEach((msg) => {
-            if (shownMessageIds.current.has(msg.message_id)) return;
-            shownMessageIds.current.add(msg.message_id);
+        if (!isMounted) return; // Component unmounted, ignore response
 
-            liveMessage(msg.message, "📢 Faculty Message");
-            setNotifList((prev) =>
-              [
-                {
-                  id: `live-${msg.message_id}`,
-                  type: "warning",
-                  message: `📢 Live: ${msg.message}`,
-                  ts: new Date(msg.created_at),
-                  read: false,
-                },
-                ...prev,
-              ].slice(0, 20)
-            );
-          });
+        if (response.ok && data.success) {
+          // Handle LOCK status change (only if actually changed)
+          if (data.locked !== lastLockStateRef.current) {
+            lastLockStateRef.current = data.locked;
+
+            if (data.locked && !isLocked) {
+              // Just got locked
+              setIsLocked(true);
+              console.log("🔒 [FRONTEND] Student locked by faculty");
+
+              if (!lockDialogShown) {
+                setLockDialogShown(true);
+                confirm({
+                  title: "🔒 Test Locked",
+                  message:
+                    "Your test has been locked by the instructor. Please wait for further instructions or contact support.",
+                  confirmText: "Understood",
+                  cancelText: "Close",
+                  type: "locked",
+                }).catch(() => {}); // Handle dialog close
+              }
+            } else if (!data.locked && isLocked) {
+              // Just got unlocked
+              setIsLocked(false);
+              setLockDialogShown(false);
+              console.log("🔓 [FRONTEND] Student unlocked by faculty");
+              success(
+                "✅ Your test has been unlocked. You may now continue.",
+                "Test Unlocked"
+              );
+            }
+          }
+
+          // Handle live messages
+          if (data.messages && data.messages.length > 0) {
+            data.messages.forEach((msg) => {
+              if (shownMessageIds.current.has(msg.message_id)) return;
+              shownMessageIds.current.add(msg.message_id);
+
+              liveMessage(msg.message, "📢 Faculty Message");
+              setNotifList((prev) =>
+                [
+                  {
+                    id: `live-${msg.message_id}`,
+                    type: "warning",
+                    message: `📢 Live: ${msg.message}`,
+                    ts: new Date(msg.created_at),
+                    read: false,
+                  },
+                  ...prev,
+                ].slice(0, 20)
+              );
+            });
+          }
         }
       } catch (err) {
-        console.error("Poll live messages error:", err);
+        if (err.name !== "TimeoutError" && err.name !== "AbortError") {
+          console.error("❌ [FRONTEND] Poll error:", err);
+        }
+      } finally {
+        if (isMounted) {
+          isPollingRef.current = false;
+        }
       }
     };
 
-    pollLiveMessages();
-    const interval = setInterval(pollLiveMessages, 5000);
-    return () => clearInterval(interval);
-  }, [test, testId, isSubmitted, liveMessage]);
+    // Initial poll
+    pollLiveStatus();
+
+    // Set up interval (5 seconds)
+    const interval = setInterval(pollLiveStatus, 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      isPollingRef.current = false;
+    };
+  }, [
+    test,
+    testId,
+    isSubmitted,
+    liveMessage,
+    success,
+    isLocked,
+    lockDialogShown,
+    confirm,
+  ]);
 
   // Auto-enter fullscreen on test start
   const enterFullscreenAuto = async () => {
@@ -378,11 +457,12 @@ export default function TestStart() {
           "No output - The test was submitted without executing the code.";
         executedStatus = 1;
       } else {
-        outputToSave = consoleOutput.map((o) => o.message).join("");
+        outputToSave = consoleOutput.map((o) => o.message).join("\n");
         const hasErrors = consoleOutput.some((o) => o.type === "error");
         executedStatus = hasErrors ? 1 : 0;
       }
 
+      // ✅ Frontend just calls API - backend handles notification
       const response = await fetch(
         `${API_BASE_URL}/test/${testId}/student/${studentId}/submit`,
         {
@@ -401,23 +481,18 @@ export default function TestStart() {
       if (response.ok && data.success) {
         setIsSubmitted(true);
         success(`Test submitted! (Attempt ${data.attempt})`, "Submitted");
+
         if (document.fullscreenElement) {
           await document.exitFullscreen().catch(() => {});
         }
-        if (test?.auto_submit) {
-          router.push(`/student/tests/${testId}/completed`);
-        } else if (test?.show_results) {
-          router.push(`/student/tests/${testId}/results`);
-        } else {
-          router.push("/student");
-        }
+
+        // Backend already sent notification - just redirect
+        router.push(`/student/tests/${testId}/completed`);
+      } else if (response.status === 409) {
+        error("Test already submitted", "Already Submitted");
+        router.push(`/student/tests/${testId}/completed`);
       } else {
-        if (response.status === 409) {
-          error("Test already submitted", "Already Submitted");
-          router.push("/student");
-        } else {
-          error(data.message || "Failed to submit test", "Error");
-        }
+        error(data.message || "Failed to submit test", "Error");
       }
     } catch (err) {
       console.error("Submit test error:", err);
@@ -425,7 +500,7 @@ export default function TestStart() {
     } finally {
       setIsLoading(false);
     }
-  }, [isSubmitted, testId, router, success, error, test, consoleOutput]);
+  }, [isSubmitted, testId, router, success, error, consoleOutput]);
 
   // Fullscreen enforcement with warning and auto-submit
   useEffect(() => {
@@ -688,18 +763,48 @@ export default function TestStart() {
     setWaitingForInput(false);
   };
 
+  // Update the timer effect to track remaining time
+  useEffect(() => {
+    if (!test) return;
+
+    const updateTimeRemaining = () => {
+      const endTime = new Date(test.endTime);
+      const now = new Date();
+      const remaining = Math.max(0, Math.floor((endTime - now) / 1000)); // seconds
+      setTimeRemaining(remaining);
+    };
+
+    updateTimeRemaining();
+    const interval = setInterval(updateTimeRemaining, 1000);
+
+    return () => clearInterval(interval);
+  }, [test]);
+
+  // Update the handleSubmitTest function
   const handleSubmitTest = async () => {
     if (isSubmitted) return;
 
+    // Check if wait_until_end is enabled and time hasn't expired
+    if (test.wait_until_end && timeRemaining > 0) {
+      warning(
+        `You cannot submit until the test time expires. Time remaining: ${Math.floor(
+          timeRemaining / 60
+        )}m ${timeRemaining % 60}s`,
+        "Submit Not Allowed"
+      );
+      return;
+    }
+
     const confirmed = await confirm({
       title: "Submit Test?",
-      message: `Are you sure you want to submit?\n\nAttempt: ${currentAttempt} of ${maxAttempts}\n\nThis action cannot be undone.`,
+      message: `Are you sure you want to submit? (${currentAttempt} of ${maxAttempts})\nThis action cannot be undone.`,
       confirmText: "Submit Test",
       cancelText: "Cancel",
       type: "warning",
     });
 
     if (!confirmed) return;
+
     await confirmEndTest();
   };
 
@@ -837,18 +942,33 @@ export default function TestStart() {
             <button
               className="student-action-btn danger"
               onClick={handleSubmitTest}
-              disabled={isSubmitted}
+              disabled={
+                isSubmitted || (test.wait_until_end && timeRemaining > 0)
+              }
               style={{
                 pointerEvents: "auto",
-                cursor: isSubmitted ? "not-allowed" : "pointer",
-                opacity: isSubmitted ? 0.6 : 1,
+                cursor:
+                  isSubmitted || (test.wait_until_end && timeRemaining > 0)
+                    ? "not-allowed"
+                    : "pointer",
+                opacity:
+                  isSubmitted || (test.wait_until_end && timeRemaining > 0)
+                    ? 0.6
+                    : 1,
               }}
+              title={
+                test.wait_until_end && timeRemaining > 0
+                  ? "Submit will be enabled after test time expires"
+                  : isSubmitted
+                  ? "Already submitted"
+                  : "Submit your test"
+              }
             >
               <svg
                 className="w-5 h-5"
                 fill="none"
-                stroke="currentColor"
                 strokeWidth="1.5"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
                 <path
@@ -857,7 +977,11 @@ export default function TestStart() {
                   d="M3.75 4.5l16.5 7.5-16.5 7.5 4.5-7.5-4.5-7.5z"
                 />
               </svg>
-              {isSubmitted ? "Submitted" : "Submit"}
+              {isSubmitted
+                ? "Submitted"
+                : test.wait_until_end && timeRemaining > 0
+                ? "Submit Locked"
+                : "Submit Test"}
             </button>
           </div>
         </div>
