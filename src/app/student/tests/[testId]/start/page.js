@@ -36,7 +36,6 @@ export default function TestStart() {
   const [lockDialogShown, setLockDialogShown] = useState(false);
   const isPollingRef = useRef(false);
   const lastLockStateRef = useRef(null);
-  const [timeRemaining, setTimeRemaining] = useState(null);
 
   const [consoleOutput, setConsoleOutput] = useState([]);
   const [isRunning, setIsRunning] = useState(false);
@@ -763,48 +762,18 @@ export default function TestStart() {
     setWaitingForInput(false);
   };
 
-  // Update the timer effect to track remaining time
-  useEffect(() => {
-    if (!test) return;
-
-    const updateTimeRemaining = () => {
-      const endTime = new Date(test.endTime);
-      const now = new Date();
-      const remaining = Math.max(0, Math.floor((endTime - now) / 1000)); // seconds
-      setTimeRemaining(remaining);
-    };
-
-    updateTimeRemaining();
-    const interval = setInterval(updateTimeRemaining, 1000);
-
-    return () => clearInterval(interval);
-  }, [test]);
-
-  // Update the handleSubmitTest function
   const handleSubmitTest = async () => {
     if (isSubmitted) return;
 
-    // Check if wait_until_end is enabled and time hasn't expired
-    if (test.wait_until_end && timeRemaining > 0) {
-      warning(
-        `You cannot submit until the test time expires. Time remaining: ${Math.floor(
-          timeRemaining / 60
-        )}m ${timeRemaining % 60}s`,
-        "Submit Not Allowed"
-      );
-      return;
-    }
-
     const confirmed = await confirm({
       title: "Submit Test?",
-      message: `Are you sure you want to submit? (${currentAttempt} of ${maxAttempts})\nThis action cannot be undone.`,
+      message: `Are you sure you want to submit?\n\nAttempt: ${currentAttempt} of ${maxAttempts}\n\nThis action cannot be undone.`,
       confirmText: "Submit Test",
       cancelText: "Cancel",
       type: "warning",
     });
 
     if (!confirmed) return;
-
     await confirmEndTest();
   };
 
@@ -942,33 +911,18 @@ export default function TestStart() {
             <button
               className="student-action-btn danger"
               onClick={handleSubmitTest}
-              disabled={
-                isSubmitted || (test.wait_until_end && timeRemaining > 0)
-              }
+              disabled={isSubmitted}
               style={{
                 pointerEvents: "auto",
-                cursor:
-                  isSubmitted || (test.wait_until_end && timeRemaining > 0)
-                    ? "not-allowed"
-                    : "pointer",
-                opacity:
-                  isSubmitted || (test.wait_until_end && timeRemaining > 0)
-                    ? 0.6
-                    : 1,
+                cursor: isSubmitted ? "not-allowed" : "pointer",
+                opacity: isSubmitted ? 0.6 : 1,
               }}
-              title={
-                test.wait_until_end && timeRemaining > 0
-                  ? "Submit will be enabled after test time expires"
-                  : isSubmitted
-                  ? "Already submitted"
-                  : "Submit your test"
-              }
             >
               <svg
                 className="w-5 h-5"
                 fill="none"
-                strokeWidth="1.5"
                 stroke="currentColor"
+                strokeWidth="1.5"
                 viewBox="0 0 24 24"
               >
                 <path
@@ -977,11 +931,7 @@ export default function TestStart() {
                   d="M3.75 4.5l16.5 7.5-16.5 7.5 4.5-7.5-4.5-7.5z"
                 />
               </svg>
-              {isSubmitted
-                ? "Submitted"
-                : test.wait_until_end && timeRemaining > 0
-                ? "Submit Locked"
-                : "Submit Test"}
+              {isSubmitted ? "Submitted" : "Submit"}
             </button>
           </div>
         </div>
