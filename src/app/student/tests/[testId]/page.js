@@ -419,8 +419,8 @@ export default function TestOverview() {
                   <div className="student-alert-info">
                     <h3 className="student-alert-title">Test In Progress</h3>
                     <p className="student-alert-subtitle">
-                      You have an active test session. Click &quot;Continue
-                      Test&quot; to resume where you left off.
+                      You have an active test session. Click &quot;Continue Test&quot; to
+  resume where you left off.
                     </p>
                     <div
                       style={{
