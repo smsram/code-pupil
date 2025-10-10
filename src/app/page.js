@@ -329,9 +329,6 @@ function EnhancedNavigation() {
                 <Link href="#features" className="nav-link">
                   Features
                 </Link>
-                <Link href="#pricing" className="nav-link">
-                  Pricing
-                </Link>
               </div>
 
               <Link href="/auth/student/">
@@ -1053,11 +1050,6 @@ function ModernFooter() {
                     How it Works
                   </Link>
                 </li>
-                <li>
-                  <Link href="#pricing" className="footer-link">
-                    Pricing
-                  </Link>
-                </li>
               </ul>
             </div>
 
@@ -1088,8 +1080,19 @@ function ModernFooter() {
             </div>
 
             <div className="footer-column">
-              <h4 className="column-title">Student Portal</h4>
+              <h4 className="column-title">Portals</h4>
               <ul className="footer-links">
+                <li>
+                  <Link href="/auth/faculty/" className="footer-link featured-link">
+                  <span className="link-icon">→</span>
+                    Faculty Login
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/faculty/" className="footer-link">
+                    Faculty Dashboard
+                  </Link>
+                </li>
                 <li>
                   <Link
                     href="/auth/student/"
@@ -1100,18 +1103,8 @@ function ModernFooter() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="#dashboard" className="footer-link">
+                  <Link href="/student/" className="footer-link">
                     Test Dashboard
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#results" className="footer-link">
-                    Results
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#profile" className="footer-link">
-                    Profile
                   </Link>
                 </li>
               </ul>
