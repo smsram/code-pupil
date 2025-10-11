@@ -5,6 +5,8 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { useNotification } from "@/app/components/Notification";
 import LoadingOverlay from "@/app/components/LoadingOverlay";
+import ToggleSwitch from "@/app/components/ToggleSwitch";
+import RichTextEditor from "@/app/components/RichTextEditor";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -281,13 +283,6 @@ const EditTest = () => {
 
   return (
     <>
-      <LoadingOverlay
-        active={isSaving}
-        message={loadingMessage}
-        type="spinner"
-        blur={true}
-      />
-      return (
       <>
         <LoadingOverlay
           active={isSaving}
@@ -535,19 +530,13 @@ const EditTest = () => {
                 >
                   Task Description & Instructions
                 </label>
-                <textarea
-                  name="description"
-                  className="form-textarea"
-                  style={{
-                    width: "100%",
-                    height: "120px",
-                    pointerEvents: "auto",
-                    cursor: "text",
-                  }}
-                  placeholder="Provide detailed instructions, problem statements, expected outputs, constraints, and any additional information students need to complete the test..."
+                <RichTextEditor
                   value={formData.description}
-                  onChange={handleInputChange}
+                  onChange={(html) =>
+                    setFormData((prev) => ({ ...prev, description: html }))
+                  }
                   disabled={isSaving}
+                  placeholder="Provide detailed instructions, problem statements, expected outputs, constraints, and any additional information students need to complete the test..."
                 />
               </div>
 
@@ -651,13 +640,14 @@ const EditTest = () => {
                     color: "#06b6d4",
                     fontSize: "1.1rem",
                     fontWeight: 600,
-                    marginBottom: "1rem",
+                    marginBottom: "1.5rem",
                   }}
                 >
                   Advanced Configuration
                 </h4>
 
-                <div className="grid-2">
+                {/* Numeric Inputs */}
+                <div className="grid-2" style={{ marginBottom: "2rem" }}>
                   <div>
                     <label
                       style={{
@@ -715,151 +705,108 @@ const EditTest = () => {
                   </div>
                 </div>
 
-                {/* Checkboxes - Same as create */}
-                <div style={{ marginTop: "1rem" }}>
-                  <label
+                {/* Toggle Switches Section */}
+                <div
+                  style={{
+                    display: "grid",
+                    gap: "1rem",
+                    padding: "1.5rem",
+                    background: "rgba(15, 23, 42, 0.5)",
+                    borderRadius: "12px",
+                    border: "1px solid rgba(71, 85, 105, 0.3)",
+                  }}
+                >
+                  <h5
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      cursor: "pointer",
-                      userSelect: "none",
-                      pointerEvents: "auto",
+                      color: "#94a3b8",
+                      fontSize: "0.875rem",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      marginBottom: "0.5rem",
                     }}
                   >
-                    <input
-                      type="checkbox"
-                      name="fullscreenMode"
-                      checked={formData.fullscreenMode}
-                      onChange={handleInputChange}
-                      disabled={isSaving}
-                      style={{ cursor: "pointer", pointerEvents: "auto" }}
-                    />
-                    <span style={{ color: "#e2e8f0" }}>
-                      Full screen exam mode
-                    </span>
-                  </label>
-                </div>
+                    Test Settings
+                  </h5>
 
-                <div style={{ marginTop: "0.5rem" }}>
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      cursor: "pointer",
-                      userSelect: "none",
-                      pointerEvents: "auto",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      name="autoSubmit"
-                      checked={formData.autoSubmit}
-                      onChange={handleInputChange}
-                      disabled={isSaving}
-                      style={{ cursor: "pointer", pointerEvents: "auto" }}
-                    />
-                    <span style={{ color: "#e2e8f0" }}>
-                      Auto-submit when time expires
-                    </span>
-                  </label>
-                </div>
+                  <ToggleSwitch
+                    checked={formData.fullscreenMode}
+                    onChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        fullscreenMode: value,
+                      }))
+                    }
+                    disabled={isSaving}
+                    label="Full screen exam mode"
+                  />
 
-                <div style={{ marginTop: "0.5rem" }}>
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      cursor: "pointer",
-                      userSelect: "none",
-                      pointerEvents: "auto",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      name="showResults"
-                      checked={formData.showResults}
-                      onChange={handleInputChange}
-                      disabled={isSaving}
-                      style={{ cursor: "pointer", pointerEvents: "auto" }}
-                    />
-                    <span style={{ color: "#e2e8f0" }}>
-                      Allow students to view results after completion
-                    </span>
-                  </label>
-                </div>
+                  <ToggleSwitch
+                    checked={formData.autoSubmit}
+                    onChange={(value) =>
+                      setFormData((prev) => ({ ...prev, autoSubmit: value }))
+                    }
+                    disabled={isSaving}
+                    label="Auto-submit when time expires"
+                  />
 
-                <div style={{ marginTop: "0.5rem" }}>
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      cursor: "pointer",
-                      userSelect: "none",
-                      pointerEvents: "auto",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      name="waitUntilEnd"
-                      checked={formData.waitUntilEnd}
-                      onChange={handleInputChange}
-                      disabled={isSaving}
-                      style={{ cursor: "pointer", pointerEvents: "auto" }}
-                    />
-                    <span style={{ color: "#e2e8f0" }}>
-                      Wait until exam ends (no submit button enabled)
-                    </span>
-                  </label>
-                </div>
+                  <ToggleSwitch
+                    checked={formData.showResults}
+                    onChange={(value) =>
+                      setFormData((prev) => ({ ...prev, showResults: value }))
+                    }
+                    disabled={isSaving}
+                    label="Allow students to view results after completion"
+                  />
 
-                <div style={{ marginTop: "0.5rem" }}>
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      cursor: "pointer",
-                      userSelect: "none",
-                      pointerEvents: "auto",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      name="allowCopy"
-                      checked={formData.allowCopy}
-                      onChange={handleInputChange}
-                      disabled={isSaving}
-                      style={{ cursor: "pointer", pointerEvents: "auto" }}
-                    />
-                    <span style={{ color: "#e2e8f0" }}>Allow copy</span>
-                  </label>
-                </div>
+                  <ToggleSwitch
+                    checked={formData.waitUntilEnd}
+                    onChange={(value) =>
+                      setFormData((prev) => ({ ...prev, waitUntilEnd: value }))
+                    }
+                    disabled={isSaving}
+                    label="Wait until exam ends (no submit button enabled)"
+                  />
 
-                <div style={{ marginTop: "0.5rem" }}>
-                  <label
+                  <div
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                      cursor: "pointer",
-                      userSelect: "none",
-                      pointerEvents: "auto",
+                      height: "1px",
+                      background: "rgba(71, 85, 105, 0.3)",
+                      margin: "0.5rem 0",
+                    }}
+                  />
+
+                  <h5
+                    style={{
+                      color: "#94a3b8",
+                      fontSize: "0.875rem",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      marginTop: "0.5rem",
+                      marginBottom: "0.5rem",
                     }}
                   >
-                    <input
-                      type="checkbox"
-                      name="allowPaste"
-                      checked={formData.allowPaste}
-                      onChange={handleInputChange}
-                      disabled={isSaving}
-                      style={{ cursor: "pointer", pointerEvents: "auto" }}
-                    />
-                    <span style={{ color: "#e2e8f0" }}>Allow paste</span>
-                  </label>
+                    Code Editor Permissions
+                  </h5>
+
+                  <ToggleSwitch
+                    checked={formData.allowCopy}
+                    onChange={(value) =>
+                      setFormData((prev) => ({ ...prev, allowCopy: value }))
+                    }
+                    disabled={isSaving}
+                    label="Allow copy"
+                  />
+
+                  <ToggleSwitch
+                    checked={formData.allowPaste}
+                    onChange={(value) =>
+                      setFormData((prev) => ({ ...prev, allowPaste: value }))
+                    }
+                    disabled={isSaving}
+                    label="Allow paste"
+                  />
                 </div>
               </div>
 
