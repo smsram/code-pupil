@@ -91,6 +91,7 @@ const CodeEditor = forwardRef(
       allowCopy = true,
       allowPaste = true,
       isSaving = false,
+      onWPMUpdate, // NEW: Callback to send WPM updates
     },
     ref
   ) => {
@@ -105,6 +106,49 @@ const CodeEditor = forwardRef(
     const connectionTimeoutRef = useRef(null);
     const heartbeatRef = useRef(null);
     const isStoppingRef = useRef(false);
+
+    // WPM tracking state
+    const [wpm, setWpm] = useState(0);
+    const wpmDataRef = useRef({
+      totalCharacters: 0,
+      startTime: Date.now(),
+      lastUpdateTime: Date.now(),
+      typingIntervals: [], // Store intervals between keystrokes
+    });
+    const wpmUpdateIntervalRef = useRef(null);
+
+    // Calculate WPM
+    const calculateWPM = () => {
+      const data = wpmDataRef.current;
+      const elapsedMinutes = (Date.now() - data.startTime) / 60000;
+      
+      if (elapsedMinutes === 0) return 0;
+      
+      // Standard: 1 word = 5 characters
+      const words = data.totalCharacters / 5;
+      const currentWPM = Math.round(words / elapsedMinutes);
+      
+      return currentWPM;
+    };
+
+    // Update WPM periodically
+    useEffect(() => {
+      wpmUpdateIntervalRef.current = setInterval(() => {
+        const currentWPM = calculateWPM();
+        setWpm(currentWPM);
+        
+        // Send WPM update to parent component
+        if (onWPMUpdate && currentWPM > 0) {
+          onWPMUpdate(currentWPM);
+        }
+      }, 5000); // Update every 5 seconds
+
+      return () => {
+        if (wpmUpdateIntervalRef.current) {
+          clearInterval(wpmUpdateIntervalRef.current);
+        }
+      };
+    }, [onWPMUpdate]);
 
     useEffect(() => {
       let mounted = true;
@@ -221,10 +265,23 @@ const CodeEditor = forwardRef(
           setCode(initial);
           onChange?.(initial);
 
-          editorRef.current.on("change", (cm) => {
+          // Track typing for WPM
+          editorRef.current.on("change", (cm, changeObj) => {
             const val = cm.getValue();
             setCode(val);
             onChange?.(val);
+
+            // Track WPM only for user input (not programmatic changes)
+            if (changeObj.origin === "+input" || changeObj.origin === "paste") {
+              const added = changeObj.text.join("").length;
+              const removed = changeObj.removed ? changeObj.removed.join("").length : 0;
+              const netChange = added - removed;
+
+              if (netChange > 0) {
+                wpmDataRef.current.totalCharacters += netChange;
+                wpmDataRef.current.lastUpdateTime = Date.now();
+              }
+            }
           });
 
           setCmReady(true);
@@ -237,8 +294,10 @@ const CodeEditor = forwardRef(
         isStoppingRef.current = false;
         closeReasonRef.current = "unmount";
         disconnectFromServer();
+        if (wpmUpdateIntervalRef.current) {
+          clearInterval(wpmUpdateIntervalRef.current);
+        }
       };
-      // Intentionally only run on mount - onError callback changes shouldn't re-initialize editor
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -296,12 +355,20 @@ const CodeEditor = forwardRef(
               onChange?.(newCode);
             }
           },
+          getWPM: () => wpm, // NEW: Expose WPM
+          resetWPM: () => {
+            wpmDataRef.current = {
+              totalCharacters: 0,
+              startTime: Date.now(),
+              lastUpdateTime: Date.now(),
+              typingIntervals: [],
+            };
+            setWpm(0);
+          },
         };
       }
-      // Ref object should update when state changes, not when function identities change
-      // Functions are stable within this component scope and don't need to be dependencies
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [code, isRunning, ref]);
+    }, [code, isRunning, wpm, ref]);
 
     const getDefaultCode = (lang) => {
       const templates = {
@@ -533,6 +600,44 @@ const CodeEditor = forwardRef(
             <span className="student-language-display">
               {language.toUpperCase()}
             </span>
+            {/* NEW: Display WPM */}
+            {wpm > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  marginLeft: "1rem",
+                  padding: "0.25rem 0.75rem",
+                  background: "rgba(6, 182, 212, 0.1)",
+                  borderRadius: "6px",
+                  border: "1px solid rgba(6, 182, 212, 0.25)",
+                }}
+              >
+                <svg
+                  style={{ width: "14px", height: "14px", color: "#06b6d4" }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+                <span
+                  style={{
+                    color: "#06b6d4",
+                    fontSize: "0.8125rem",
+                    fontWeight: "600",
+                  }}
+                >
+                  {wpm} WPM
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="student-editor-actions">
