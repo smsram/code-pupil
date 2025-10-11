@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useNotification } from "@/app/components/Notification";
 import LoadingOverlay from "@/app/components/LoadingOverlay";
+import HTMLRenderer from "@/app/components/HTMLRenderer";
 import "../../style.css";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -419,8 +420,8 @@ export default function TestOverview() {
                   <div className="student-alert-info">
                     <h3 className="student-alert-title">Test In Progress</h3>
                     <p className="student-alert-subtitle">
-                      You have an active test session. Click &quot;Continue Test&quot; to
-  resume where you left off.
+                      You have an active test session. Click &quot;Continue
+                      Test&quot; to resume where you left off.
                     </p>
                     <div
                       style={{
@@ -572,10 +573,16 @@ export default function TestOverview() {
                   </svg>
                   Test Description
                 </h2>
-                <div className="student-problem-statement">
-                  <p style={{ whiteSpace: "pre-wrap", lineHeight: "1.6" }}>
-                    {test.description}
-                  </p>
+                <div
+                  className="student-problem-statement"
+                  style={{
+                    background: "rgba(15, 23, 42, 0.5)",
+                    border: "1px solid rgba(71, 85, 105, 0.4)",
+                    borderRadius: "12px",
+                    padding: "1.5rem",
+                  }}
+                >
+                  <HTMLRenderer content={test.description} />
                 </div>
               </div>
             )}
