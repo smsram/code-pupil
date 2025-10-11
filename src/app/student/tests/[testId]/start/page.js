@@ -61,6 +61,8 @@ export default function TestStart() {
   const countdownIntervalRef = useRef(null);
   const hasRequestedFullscreen = useRef(false);
 
+  const [currentWPM, setCurrentWPM] = useState(0);
+
   // Memoized init to satisfy exhaustive-deps
   const initTestSession = useCallback(async () => {
     const studentId = localStorage.getItem("student_id");
@@ -438,12 +440,18 @@ export default function TestStart() {
     };
   }, []);
 
-  // Memoized confirmEndTest
+  // Add WPM update handler
+  const handleWPMUpdate = useCallback((wpm) => {
+    setCurrentWPM(wpm);
+  }, []);
+
+  // Update the submit function to include WPM
   const confirmEndTest = useCallback(async () => {
     if (isSubmitted) return;
 
     const studentId = localStorage.getItem("student_id");
     const code = codeEditorRef.current?.getValue() || "";
+    const wpm = codeEditorRef.current?.getWPM() || currentWPM;
 
     setIsLoading(true);
 
@@ -461,7 +469,6 @@ export default function TestStart() {
         executedStatus = hasErrors ? 1 : 0;
       }
 
-      // ✅ Frontend just calls API - backend handles notification
       const response = await fetch(
         `${API_BASE_URL}/test/${testId}/student/${studentId}/submit`,
         {
@@ -471,6 +478,7 @@ export default function TestStart() {
             code,
             output: outputToSave,
             executed: executedStatus,
+            wpm,
           }),
         }
       );
@@ -479,13 +487,21 @@ export default function TestStart() {
 
       if (response.ok && data.success) {
         setIsSubmitted(true);
-        success(`Test submitted! (Attempt ${data.attempt})`, "Submitted");
+
+        // Show warning if high similarity
+        if (data.warning) {
+          warning(data.warning, "Similarity Warning");
+        }
+
+        success(
+          `Test submitted! (Attempt ${data.attempt}) - Similarity: ${data.similarity}%`,
+          "Submitted"
+        );
 
         if (document.fullscreenElement) {
           await document.exitFullscreen().catch(() => {});
         }
 
-        // Backend already sent notification - just redirect
         router.push(`/student/tests/${testId}/completed`);
       } else if (response.status === 409) {
         error("Test already submitted", "Already Submitted");
@@ -499,7 +515,16 @@ export default function TestStart() {
     } finally {
       setIsLoading(false);
     }
-  }, [isSubmitted, testId, router, success, error, consoleOutput]);
+  }, [
+    isSubmitted,
+    testId,
+    router,
+    success,
+    error,
+    warning,
+    consoleOutput,
+    currentWPM,
+  ]);
 
   // Fullscreen enforcement with warning and auto-submit
   useEffect(() => {
@@ -1011,6 +1036,7 @@ export default function TestStart() {
               allowCopy={test.allow_copy}
               allowPaste={test.allow_paste}
               isSaving={isSaving}
+              onWPMUpdate={handleWPMUpdate}
             />
           </div>
 
