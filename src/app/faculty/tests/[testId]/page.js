@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useNotification } from "@/app/components/Notification";
 import LoadingOverlay from "@/app/components/LoadingOverlay";
 import AutoRefreshButton from "@/app/components/AutoRefreshButton";
+import HTMLRenderer from "@/app/components/HTMLRenderer";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -562,9 +563,16 @@ const TestDetail = () => {
               >
                 Description
               </h4>
-              <p style={{ color: "#94a3b8", lineHeight: 1.6 }}>
-                {test.test.description}
-              </p>
+              <div
+                style={{
+                  background: "rgba(15, 23, 42, 0.5)",
+                  border: "1px solid rgba(71, 85, 105, 0.4)",
+                  borderRadius: "12px",
+                  padding: "1.5rem",
+                }}
+              >
+                <HTMLRenderer content={test.test.description} />
+              </div>
             </div>
           )}
 
