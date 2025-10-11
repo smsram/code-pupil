@@ -276,9 +276,10 @@ export default function Page() {
   );
 }
 
-/* ENHANCED NAVIGATION HEADER - WITH LOGO IMAGE */
+/* ENHANCED NAVIGATION HEADER - FULLY RESPONSIVE & DYNAMIC */
 function EnhancedNavigation() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -289,6 +290,35 @@ function EnhancedNavigation() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (mobileMenuOpen && !e.target.closest('.nav-content')) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    if (mobileMenuOpen) {
+      document.addEventListener('click', handleClickOutside);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      document.body.style.overflow = 'unset';
+    };
+  }, [mobileMenuOpen]);
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
   return (
     <>
       <header className={`premium-nav ${scrolled ? "scrolled" : ""}`}>
@@ -296,7 +326,8 @@ function EnhancedNavigation() {
           <div className="nav-glass" />
 
           <div className="nav-content">
-            <Link href="/" className="brand-link">
+            {/* Brand Section */}
+            <Link href="/" className="brand-link" onClick={closeMobileMenu}>
               <div className="brand-section">
                 <div className="logo-wrapper">
                   <div className="logo-glow" />
@@ -324,11 +355,18 @@ function EnhancedNavigation() {
               </div>
             </Link>
 
-            <div className="nav-actions">
+            {/* Desktop Navigation Actions */}
+            <div className="nav-actions desktop-nav">
               <div className="nav-links">
                 <Link href="#features" className="nav-link">
                   Features
                 </Link>
+                <Link href="#how-it-works" className="nav-link">
+                  How it Works
+                </Link>
+                {/* <Link href="#pricing" className="nav-link">
+                  Pricing
+                </Link> */}
               </div>
 
               <Link href="/auth/student/">
@@ -351,7 +389,8 @@ function EnhancedNavigation() {
                         strokeLinejoin="round"
                       />
                     </svg>
-                    Student Login
+                    <span className="btn-text-desktop">Student Login</span>
+                    <span className="btn-text-mobile">Login</span>
                     <svg
                       className="btn-arrow"
                       width="16"
@@ -371,6 +410,90 @@ function EnhancedNavigation() {
                 </button>
               </Link>
             </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              className={`mobile-menu-btn ${mobileMenuOpen ? 'active' : ''}`}
+              onClick={toggleMobileMenu}
+              aria-label="Toggle mobile menu"
+            >
+              <span className="hamburger-line line-1"></span>
+              <span className="hamburger-line line-2"></span>
+              <span className="hamburger-line line-3"></span>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Menu Overlay */}
+        <div className={`mobile-menu-overlay ${mobileMenuOpen ? 'active' : ''}`}>
+          <div className="mobile-menu-content">
+            {/* Mobile Navigation Links */}
+            <nav className="mobile-nav-links">
+              <Link 
+                href="#features" 
+                className="mobile-nav-link"
+                onClick={closeMobileMenu}
+              >
+                <span className="link-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
+                <span className="link-text">Features</span>
+                <span className="link-arrow">→</span>
+              </Link>
+
+              <Link 
+                href="#how-it-works" 
+                className="mobile-nav-link"
+                onClick={closeMobileMenu}
+              >
+                <span className="link-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
+                <span className="link-text">How it Works</span>
+                <span className="link-arrow">→</span>
+              </Link>
+
+              {/* <Link 
+                href="#pricing" 
+                className="mobile-nav-link"
+                onClick={closeMobileMenu}
+              >
+                <span className="link-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
+                <span className="link-text">Pricing</span>
+                <span className="link-arrow">→</span>
+              </Link> */}
+
+              <div className="mobile-nav-divider" />
+
+              <Link 
+                href="/auth/student/" 
+                className="mobile-nav-link featured"
+                onClick={closeMobileMenu}
+              >
+                <span className="link-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
+                <span className="link-text">Student Login</span>
+                <span className="link-arrow">→</span>
+              </Link>
+            </nav>
+
+            {/* Mobile Menu Footer */}
+            <div className="mobile-menu-footer">
+              <p className="mobile-menu-tagline">
+                Build, conduct, and measure coding skill
+              </p>
+            </div>
           </div>
         </div>
       </header>
@@ -379,13 +502,11 @@ function EnhancedNavigation() {
 }
 
 /* ENHANCED HERO SECTION */
-/* ENHANCED HERO SECTION - WITHOUT IMAGE */
 function EnhancedHero() {
   return (
     <>
       <section className="premium-hero" id="top">
         <div className="hero-grid" />
-
         <div className="hero-orb orb-1" />
         <div className="hero-orb orb-2" />
         <div className="hero-orb orb-3" />
@@ -403,16 +524,16 @@ function EnhancedHero() {
           </div>
 
           <h1 className="hero-title">
-            <span className="title-line line-1">Conduct coding tests</span>
-            <span className="title-line line-2">
-              with confidence
+            <span className="title-line">
+              Conduct <span className="gradient-word">coding tests</span><br />
+              with <span className="gradient-word">confidence</span>
               <span className="title-accent">.</span>
             </span>
           </h1>
 
           <p className="hero-subtitle">
-            Live announcements, plagiarism checks, auto-grading, and rich
-            analytics — all in one place.
+            <span className="subtitle-highlight">Live announcements</span>, plagiarism checks,
+            <span className="subtitle-highlight"> auto-grading</span>, and rich analytics — all in one place.
           </p>
 
           <div className="hero-cta">
@@ -456,7 +577,6 @@ function EnhancedHero() {
                 </span>
               </button>
             </Link>
-
             <Link href="#features">
               <button className="secondary-cta-btn">
                 <span className="secondary-btn-bg" />
@@ -487,45 +607,27 @@ function EnhancedHero() {
             <div className="marquee-container">
               <div className="marquee-content">
                 {[
-                  "Active Batches",
-                  "Tests Conducted",
-                  "Auto-graded",
-                  "Uptime 99.9%",
-                  "IST Time",
+                  { icon: "📊", text: "Active Batches" },
+                  { icon: "✅", text: "Tests Conducted" },
+                  { icon: "⚡", text: "Auto-graded" },
+                  { icon: "🚀", text: "99.9% Uptime" },
+                  { icon: "🕒", text: "IST Time" },
                 ].map((stat, i) => (
                   <div className="stat-pill" key={i}>
-                    <span className="pill-icon">
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                      </svg>
-                    </span>
-                    <span className="pill-text">{stat}</span>
+                    <span className="pill-emoji">{stat.icon}</span>
+                    <span className="pill-text">{stat.text}</span>
                   </div>
                 ))}
                 {[
-                  "Active Batches",
-                  "Tests Conducted",
-                  "Auto-graded",
-                  "Uptime 99.9%",
-                  "IST Time",
+                  { icon: "📊", text: "Active Batches" },
+                  { icon: "✅", text: "Tests Conducted" },
+                  { icon: "⚡", text: "Auto-graded" },
+                  { icon: "🚀", text: "99.9% Uptime" },
+                  { icon: "🕒", text: "IST Time" },
                 ].map((stat, i) => (
                   <div className="stat-pill" key={`dup-${i}`}>
-                    <span className="pill-icon">
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                      </svg>
-                    </span>
-                    <span className="pill-text">{stat}</span>
+                    <span className="pill-emoji">{stat.icon}</span>
+                    <span className="pill-text">{stat.text}</span>
                   </div>
                 ))}
               </div>
