@@ -5,10 +5,42 @@ import Link from "next/link";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+// ✨ NEW HELPER FUNCTION - Strip HTML and preserve line breaks
+const stripHtmlAndPreserveLines = (html) => {
+  if (!html) return "";
+  
+  // Create a temporary div to parse HTML
+  const temp = document.createElement("div");
+  temp.innerHTML = html;
+  
+  // Replace block elements with line breaks
+  const blockElements = temp.querySelectorAll('p, div, br, h1, h2, h3, h4, h5, h6, li');
+  blockElements.forEach(el => {
+    if (el.tagName === 'BR') {
+      el.replaceWith('\n');
+    } else {
+      const text = el.textContent;
+      el.replaceWith(text + '\n');
+    }
+  });
+  
+  // Get text content and clean up
+  let text = temp.textContent || temp.innerText || "";
+  
+  // Clean up excessive line breaks (more than 2 consecutive)
+  text = text.replace(/\n{3,}/g, '\n\n');
+  
+  // Trim start and end
+  text = text.trim();
+  
+  return text;
+};
+
 export default function TestCard({ test, currentTime, onStatusUpdate }) {
   const [isClient, setIsClient] = useState(false);
   const [formattedStartTime, setFormattedStartTime] = useState("");
   const [hasAutoUpdated, setHasAutoUpdated] = useState(false);
+  const [plainDescription, setPlainDescription] = useState(""); // ✨ NEW STATE
 
   useEffect(() => {
     setIsClient(true);
@@ -25,7 +57,13 @@ export default function TestCard({ test, currentTime, onStatusUpdate }) {
         })
       );
     }
-  }, [test.start_time]);
+    
+    // ✨ NEW - Process description to strip HTML
+    if (test.description) {
+      const stripped = stripHtmlAndPreserveLines(test.description);
+      setPlainDescription(stripped);
+    }
+  }, [test.start_time, test.description]);
 
   // Stable function reference for exhaustive-deps
   const updateExpiredTest = useCallback(async () => {
@@ -91,7 +129,6 @@ export default function TestCard({ test, currentTime, onStatusUpdate }) {
     const isExpired = now > endTime;
 
     // Priority 1: Check if test expired with in-progress status and no submission (LEFT TEST)
-    // This includes cases where auto-update didn't happen yet
     if (
       isExpired &&
       test.studentStatus === "in-progress" &&
@@ -149,7 +186,7 @@ export default function TestCard({ test, currentTime, onStatusUpdate }) {
       };
     }
 
-    // Priority 2: Check if student is actively taking the test (test still running)
+    // Priority 2: Check if student is actively taking the test
     if (test.studentStatus === "in-progress" && !isExpired) {
       const remainingMinutes = Math.max(
         0,
@@ -213,7 +250,7 @@ export default function TestCard({ test, currentTime, onStatusUpdate }) {
       };
     }
 
-    // Priority 4: Check if test is locked for student
+    // Priority 4: Check if test is locked
     if (test.studentStatus === "locked") {
       return {
         status: "locked",
@@ -240,7 +277,7 @@ export default function TestCard({ test, currentTime, onStatusUpdate }) {
       };
     }
 
-    // Priority 5: Check if test is currently LIVE
+    // Priority 5: Check if test is LIVE
     if (now >= startTime && now <= endTime) {
       const remainingMinutes = Math.floor((endTime - now) / (1000 * 60));
       return {
@@ -263,7 +300,7 @@ export default function TestCard({ test, currentTime, onStatusUpdate }) {
       };
     }
 
-    // Priority 6: Check if test hasn't started yet (UPCOMING)
+    // Priority 6: Check if test is UPCOMING
     if (now < startTime) {
       const timeDiff = startTime - now;
       const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
@@ -310,7 +347,7 @@ export default function TestCard({ test, currentTime, onStatusUpdate }) {
       };
     }
 
-    // Priority 7: Test has ended and student didn't take it (MISSED)
+    // Priority 7: Test MISSED
     return {
       status: "missed",
       text: "MISSED",
@@ -359,7 +396,6 @@ export default function TestCard({ test, currentTime, onStatusUpdate }) {
           </span>
         </div>
 
-        {/* Rest of the component remains the same... */}
         <div className="student-test-details">
           <div className="student-test-detail-row">
             <span className="student-test-detail-label">
@@ -527,7 +563,8 @@ export default function TestCard({ test, currentTime, onStatusUpdate }) {
               </div>
             )}
 
-          {test.description && (
+          {/* ✨ UPDATED DESCRIPTION SECTION - Strips HTML, preserves lines, limits to 3 lines */}
+          {plainDescription && (
             <div
               style={{
                 marginTop: "var(--student-space-sm)",
@@ -536,12 +573,17 @@ export default function TestCard({ test, currentTime, onStatusUpdate }) {
                 borderRadius: "6px",
                 fontSize: "0.875rem",
                 color: "var(--student-text-muted)",
-                lineHeight: "1.5",
+                lineHeight: "1.6",
+                whiteSpace: "pre-line", // Preserve line breaks
+                maxHeight: "4.8em", // Limit to ~3 lines
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                display: "-webkit-box",
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: "vertical",
               }}
             >
-              {test.description.length > 150
-                ? test.description.substring(0, 150) + "..."
-                : test.description}
+              {plainDescription}
             </div>
           )}
         </div>
