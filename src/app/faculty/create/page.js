@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useNotification } from '@/app/components/Notification';
-import LoadingOverlay from '@/app/components/LoadingOverlay';
+import { useNotification } from "@/app/components/Notification";
+import LoadingOverlay from "@/app/components/LoadingOverlay";
+import ToggleSwitch from "@/app/components/ToggleSwitch";
+import RichTextEditor from "@/app/components/RichTextEditor";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -97,7 +99,7 @@ const CreateTest = () => {
 
     // Get faculty ID from localStorage
     const facultyId = localStorage.getItem("faculty_id");
-    
+
     if (!facultyId) {
       error("Please login to create a test", "Authentication Required");
       router.push("/auth/faculty");
@@ -105,7 +107,9 @@ const CreateTest = () => {
     }
 
     setIsLoading(true);
-    setLoadingMessage(status === 'published' ? "Publishing test..." : "Saving draft...");
+    setLoadingMessage(
+      status === "published" ? "Publishing test..." : "Saving draft..."
+    );
 
     try {
       const response = await fetch(`${API_BASE_URL}/test/create`, {
@@ -133,7 +137,9 @@ const CreateTest = () => {
           allowCopy: formData.allowCopy,
           allowPaste: formData.allowPaste,
           status: status,
-          scheduledMessages: scheduledMessages.filter(msg => msg.time && msg.message)
+          scheduledMessages: scheduledMessages.filter(
+            (msg) => msg.time && msg.message
+          ),
         }),
       });
 
@@ -143,9 +149,9 @@ const CreateTest = () => {
         setLoadingMessage("Success! Redirecting...");
         success(
           `${data.message} Test ID: ${data.data.test_id}`,
-          status === 'published' ? "Test Published" : "Draft Saved"
+          status === "published" ? "Test Published" : "Draft Saved"
         );
-        
+
         setTimeout(() => {
           setIsLoading(false);
           router.push("/faculty/tests");
@@ -157,20 +163,23 @@ const CreateTest = () => {
     } catch (err) {
       console.error("Test creation error:", err);
       setIsLoading(false);
-      error("Unable to connect to server. Please check your connection.", "Network Error");
+      error(
+        "Unable to connect to server. Please check your connection.",
+        "Network Error"
+      );
     }
   };
 
   const handleSaveDraft = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    handleSubmit('draft');
+    handleSubmit("draft");
   };
 
   const handlePublish = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    handleSubmit('published');
+    handleSubmit("published");
   };
 
   const handleCancel = (e) => {
@@ -181,8 +190,13 @@ const CreateTest = () => {
 
   return (
     <>
-      <LoadingOverlay active={isLoading} message={loadingMessage} type="spinner" blur={true} />
-      
+      <LoadingOverlay
+        active={isLoading}
+        message={loadingMessage}
+        type="spinner"
+        blur={true}
+      />
+
       <div className="fade-in" style={{ pointerEvents: "auto" }}>
         <div className="dashboard-card" style={{ pointerEvents: "auto" }}>
           <h2
@@ -230,7 +244,11 @@ const CreateTest = () => {
                   type="text"
                   name="title"
                   className="search-input"
-                  style={{ width: "100%", pointerEvents: "auto", cursor: "text" }}
+                  style={{
+                    width: "100%",
+                    pointerEvents: "auto",
+                    cursor: "text",
+                  }}
                   placeholder="e.g., Advanced Data Structures Final Exam"
                   value={formData.title}
                   onChange={handleInputChange}
@@ -253,7 +271,11 @@ const CreateTest = () => {
                 <select
                   name="language"
                   className="filter-select"
-                  style={{ width: "100%", pointerEvents: "auto", cursor: "pointer" }}
+                  style={{
+                    width: "100%",
+                    pointerEvents: "auto",
+                    cursor: "pointer",
+                  }}
                   value={formData.language}
                   onChange={handleInputChange}
                   disabled={isLoading}
@@ -284,7 +306,11 @@ const CreateTest = () => {
                 <select
                   name="startYear"
                   className="filter-select"
-                  style={{ width: "100%", pointerEvents: "auto", cursor: "pointer" }}
+                  style={{
+                    width: "100%",
+                    pointerEvents: "auto",
+                    cursor: "pointer",
+                  }}
                   value={formData.startYear}
                   onChange={handleInputChange}
                   disabled={isLoading}
@@ -312,7 +338,11 @@ const CreateTest = () => {
                 <select
                   name="branch"
                   className="filter-select"
-                  style={{ width: "100%", pointerEvents: "auto", cursor: "pointer" }}
+                  style={{
+                    width: "100%",
+                    pointerEvents: "auto",
+                    cursor: "pointer",
+                  }}
                   value={formData.branch}
                   onChange={handleInputChange}
                   disabled={isLoading}
@@ -320,7 +350,9 @@ const CreateTest = () => {
                 >
                   <option value="">Select Branch</option>
                   <option value="CSM">CSM - AI and ML</option>
-                  <option value="CSE">CSE - Computer Science & Engineering</option>
+                  <option value="CSE">
+                    CSE - Computer Science & Engineering
+                  </option>
                   <option value="CDS">CDS - Data Science</option>
                   <option value="CSC">CSC - Cybersecurity</option>
                 </select>
@@ -341,7 +373,11 @@ const CreateTest = () => {
                   type="number"
                   name="section"
                   className="search-input"
-                  style={{ width: "100%", pointerEvents: "auto", cursor: "text" }}
+                  style={{
+                    width: "100%",
+                    pointerEvents: "auto",
+                    cursor: "text",
+                  }}
                   placeholder="e.g., 1"
                   min="1"
                   max="20"
@@ -364,14 +400,13 @@ const CreateTest = () => {
               >
                 Task Description & Instructions
               </label>
-              <textarea
-                name="description"
-                className="form-textarea"
-                style={{ width: "100%", height: "120px", pointerEvents: "auto", cursor: "text" }}
-                placeholder="Provide detailed instructions, problem statements, expected outputs, constraints, and any additional information students need to complete the test..."
+              <RichTextEditor
                 value={formData.description}
-                onChange={handleInputChange}
+                onChange={(html) =>
+                  setFormData((prev) => ({ ...prev, description: html }))
+                }
                 disabled={isLoading}
+                placeholder="Provide detailed instructions, problem statements, expected outputs, constraints, and any additional information students need to complete the test..."
               />
             </div>
 
@@ -391,7 +426,11 @@ const CreateTest = () => {
                   type="date"
                   name="date"
                   className="search-input"
-                  style={{ width: "100%", pointerEvents: "auto", cursor: "text" }}
+                  style={{
+                    width: "100%",
+                    pointerEvents: "auto",
+                    cursor: "text",
+                  }}
                   value={formData.date}
                   onChange={handleInputChange}
                   disabled={isLoading}
@@ -414,7 +453,11 @@ const CreateTest = () => {
                   type="time"
                   name="time"
                   className="search-input"
-                  style={{ width: "100%", pointerEvents: "auto", cursor: "text" }}
+                  style={{
+                    width: "100%",
+                    pointerEvents: "auto",
+                    cursor: "text",
+                  }}
                   value={formData.time}
                   onChange={handleInputChange}
                   disabled={isLoading}
@@ -437,7 +480,11 @@ const CreateTest = () => {
                   type="number"
                   name="duration"
                   className="search-input"
-                  style={{ width: "100%", pointerEvents: "auto", cursor: "text" }}
+                  style={{
+                    width: "100%",
+                    pointerEvents: "auto",
+                    cursor: "text",
+                  }}
                   min="15"
                   max="300"
                   value={formData.duration}
@@ -450,20 +497,25 @@ const CreateTest = () => {
 
             <div
               className="dashboard-card"
-              style={{ background: "rgba(30, 41, 59, 0.3)", margin: 0, pointerEvents: "auto" }}
+              style={{
+                background: "rgba(30, 41, 59, 0.3)",
+                margin: 0,
+                pointerEvents: "auto",
+              }}
             >
               <h4
                 style={{
                   color: "#06b6d4",
                   fontSize: "1.1rem",
                   fontWeight: 600,
-                  marginBottom: "1rem",
+                  marginBottom: "1.5rem",
                 }}
               >
                 Advanced Configuration
               </h4>
 
-              <div className="grid-2">
+              {/* Numeric Inputs */}
+              <div className="grid-2" style={{ marginBottom: "2rem" }}>
                 <div>
                   <label
                     style={{
@@ -479,7 +531,11 @@ const CreateTest = () => {
                     type="number"
                     name="maxAttempts"
                     className="search-input"
-                    style={{ width: "100%", pointerEvents: "auto", cursor: "text" }}
+                    style={{
+                      width: "100%",
+                      pointerEvents: "auto",
+                      cursor: "text",
+                    }}
                     min="1"
                     max="10"
                     value={formData.maxAttempts}
@@ -503,7 +559,11 @@ const CreateTest = () => {
                     type="number"
                     name="similarityThreshold"
                     className="search-input"
-                    style={{ width: "100%", pointerEvents: "auto", cursor: "text" }}
+                    style={{
+                      width: "100%",
+                      pointerEvents: "auto",
+                      cursor: "text",
+                    }}
                     min="50"
                     max="100"
                     value={formData.similarityThreshold}
@@ -513,148 +573,105 @@ const CreateTest = () => {
                 </div>
               </div>
 
-              <div style={{ marginTop: "1rem" }}>
-                <label
+              {/* Toggle Switches Section */}
+              <div
+                style={{
+                  display: "grid",
+                  gap: "1rem",
+                  padding: "1.5rem",
+                  background: "rgba(15, 23, 42, 0.5)",
+                  borderRadius: "12px",
+                  border: "1px solid rgba(71, 85, 105, 0.3)",
+                }}
+              >
+                <h5
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    cursor: "pointer",
-                    userSelect: "none",
-                    pointerEvents: "auto"
+                    color: "#94a3b8",
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    marginBottom: "0.5rem",
                   }}
                 >
-                  <input
-                    type="checkbox"
-                    name="fullscreenMode"
-                    checked={formData.fullscreenMode}
-                    onChange={handleInputChange}
-                    disabled={isLoading}
-                    style={{ cursor: "pointer", pointerEvents: "auto" }}
-                  />
-                  <span style={{ color: "#e2e8f0" }}>Full screen exam mode</span>
-                </label>
-              </div>
+                  Test Settings
+                </h5>
 
-              <div style={{ marginTop: "0.5rem" }}>
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    cursor: "pointer",
-                    userSelect: "none",
-                    pointerEvents: "auto"
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    name="autoSubmit"
-                    checked={formData.autoSubmit}
-                    onChange={handleInputChange}
-                    disabled={isLoading}
-                    style={{ cursor: "pointer", pointerEvents: "auto" }}
-                  />
-                  <span style={{ color: "#e2e8f0" }}>
-                    Auto-submit when time expires
-                  </span>
-                </label>
-              </div>
+                <ToggleSwitch
+                  checked={formData.fullscreenMode}
+                  onChange={(value) =>
+                    setFormData((prev) => ({ ...prev, fullscreenMode: value }))
+                  }
+                  disabled={isLoading}
+                  label="Full screen exam mode"
+                />
 
-              <div style={{ marginTop: "0.5rem" }}>
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    cursor: "pointer",
-                    userSelect: "none",
-                    pointerEvents: "auto"
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    name="showResults"
-                    checked={formData.showResults}
-                    onChange={handleInputChange}
-                    disabled={isLoading}
-                    style={{ cursor: "pointer", pointerEvents: "auto" }}
-                  />
-                  <span style={{ color: "#e2e8f0" }}>
-                    Allow students to view results after completion
-                  </span>
-                </label>
-              </div>
+                <ToggleSwitch
+                  checked={formData.autoSubmit}
+                  onChange={(value) =>
+                    setFormData((prev) => ({ ...prev, autoSubmit: value }))
+                  }
+                  disabled={isLoading}
+                  label="Auto-submit when time expires"
+                />
 
-              <div style={{ marginTop: "0.5rem" }}>
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    cursor: "pointer",
-                    userSelect: "none",
-                    pointerEvents: "auto"
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    name="waitUntilEnd"
-                    checked={formData.waitUntilEnd}
-                    onChange={handleInputChange}
-                    disabled={isLoading}
-                    style={{ cursor: "pointer", pointerEvents: "auto" }}
-                  />
-                  <span style={{ color: "#e2e8f0" }}>
-                    Wait until exam ends (no submit button enabled)
-                  </span>
-                </label>
-              </div>
+                <ToggleSwitch
+                  checked={formData.showResults}
+                  onChange={(value) =>
+                    setFormData((prev) => ({ ...prev, showResults: value }))
+                  }
+                  disabled={isLoading}
+                  label="Allow students to view results after completion"
+                />
 
-              <div style={{ marginTop: "0.5rem" }}>
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    cursor: "pointer",
-                    userSelect: "none",
-                    pointerEvents: "auto"
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    name="allowCopy"
-                    checked={formData.allowCopy}
-                    onChange={handleInputChange}
-                    disabled={isLoading}
-                    style={{ cursor: "pointer", pointerEvents: "auto" }}
-                  />
-                  <span style={{ color: "#e2e8f0" }}>Allow copy</span>
-                </label>
-              </div>
+                <ToggleSwitch
+                  checked={formData.waitUntilEnd}
+                  onChange={(value) =>
+                    setFormData((prev) => ({ ...prev, waitUntilEnd: value }))
+                  }
+                  disabled={isLoading}
+                  label="Wait until exam ends (no submit button enabled)"
+                />
 
-              <div style={{ marginTop: "0.5rem" }}>
-                <label
+                <div
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
-                    cursor: "pointer",
-                    userSelect: "none",
-                    pointerEvents: "auto"
+                    height: "1px",
+                    background: "rgba(71, 85, 105, 0.3)",
+                    margin: "0.5rem 0",
+                  }}
+                />
+
+                <h5
+                  style={{
+                    color: "#94a3b8",
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    marginTop: "0.5rem",
+                    marginBottom: "0.5rem",
                   }}
                 >
-                  <input
-                    type="checkbox"
-                    name="allowPaste"
-                    checked={formData.allowPaste}
-                    onChange={handleInputChange}
-                    disabled={isLoading}
-                    style={{ cursor: "pointer", pointerEvents: "auto" }}
-                  />
-                  <span style={{ color: "#e2e8f0" }}>Allow paste</span>
-                </label>
+                  Code Editor Permissions
+                </h5>
+
+                <ToggleSwitch
+                  checked={formData.allowCopy}
+                  onChange={(value) =>
+                    setFormData((prev) => ({ ...prev, allowCopy: value }))
+                  }
+                  disabled={isLoading}
+                  label="Allow copy"
+                />
+
+                <ToggleSwitch
+                  checked={formData.allowPaste}
+                  onChange={(value) =>
+                    setFormData((prev) => ({ ...prev, allowPaste: value }))
+                  }
+                  disabled={isLoading}
+                  label="Allow paste"
+                />
               </div>
             </div>
 
@@ -689,7 +706,7 @@ const CreateTest = () => {
                       background: "rgba(30, 41, 59, 0.3)",
                       borderRadius: "8px",
                       border: "1px solid rgba(71, 85, 105, 0.3)",
-                      pointerEvents: "auto"
+                      pointerEvents: "auto",
                     }}
                   >
                     <input
@@ -698,7 +715,11 @@ const CreateTest = () => {
                       placeholder="Time (min)"
                       min="1"
                       max="300"
-                      style={{ padding: "0.5rem", pointerEvents: "auto", cursor: "text" }}
+                      style={{
+                        padding: "0.5rem",
+                        pointerEvents: "auto",
+                        cursor: "text",
+                      }}
                       value={msg.time}
                       onChange={(e) =>
                         updateScheduledMessage(index, "time", e.target.value)
@@ -709,7 +730,11 @@ const CreateTest = () => {
                       type="text"
                       className="search-input"
                       placeholder="Message to display to students..."
-                      style={{ padding: "0.5rem", pointerEvents: "auto", cursor: "text" }}
+                      style={{
+                        padding: "0.5rem",
+                        pointerEvents: "auto",
+                        cursor: "text",
+                      }}
                       value={msg.message}
                       onChange={(e) =>
                         updateScheduledMessage(index, "message", e.target.value)
@@ -732,7 +757,7 @@ const CreateTest = () => {
                         gap: "0.5rem",
                         pointerEvents: "auto",
                         fontWeight: 600,
-                        opacity: isLoading ? 0.5 : 1
+                        opacity: isLoading ? 0.5 : 1,
                       }}
                     >
                       <svg
@@ -770,7 +795,7 @@ const CreateTest = () => {
                   fontSize: "14px",
                   fontWeight: 600,
                   pointerEvents: "auto",
-                  opacity: isLoading ? 0.5 : 1
+                  opacity: isLoading ? 0.5 : 1,
                 }}
               >
                 <svg
@@ -814,7 +839,7 @@ const CreateTest = () => {
                   fontSize: "15px",
                   fontWeight: 600,
                   pointerEvents: "auto",
-                  opacity: isLoading ? 0.5 : 1
+                  opacity: isLoading ? 0.5 : 1,
                 }}
               >
                 Cancel
@@ -838,7 +863,7 @@ const CreateTest = () => {
                     alignItems: "center",
                     gap: "0.5rem",
                     pointerEvents: "auto",
-                    opacity: isLoading ? 0.5 : 1
+                    opacity: isLoading ? 0.5 : 1,
                   }}
                 >
                   <svg
@@ -875,7 +900,7 @@ const CreateTest = () => {
                     gap: "0.5rem",
                     boxShadow: "0 4px 12px rgba(6, 182, 212, 0.3)",
                     pointerEvents: "auto",
-                    opacity: isLoading ? 0.5 : 1
+                    opacity: isLoading ? 0.5 : 1,
                   }}
                 >
                   <svg
